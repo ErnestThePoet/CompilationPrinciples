@@ -1,2 +1,1 @@
-# CompilationPrinciples
-哈工大2023春编译系统（编译原理）实验 HIT Compilation Principle Labs(Spring 2023)
+### ！！本仓库代码仅用于给大家提供实现思路参考，请勿抄袭！！ No Plagiarism!
