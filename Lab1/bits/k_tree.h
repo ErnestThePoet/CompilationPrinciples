@@ -3,9 +3,9 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
-#include "ast_node.h"
+#include "token.h"
 
-typedef AstNode KTreeNodeValue;
+typedef Token KTreeNodeValue;
 
 typedef struct
 {
