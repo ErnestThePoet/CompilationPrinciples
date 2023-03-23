@@ -16,6 +16,7 @@
 *.sln.docstates
 
 /convert
+generated
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs

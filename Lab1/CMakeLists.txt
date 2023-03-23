@@ -1,0 +1,11 @@
+cmake_minimum_required(VERSION 3.22)
+project(CPLab1)
+aux_source_directory(./bits/ BITS_SRCS)
+aux_source_directory(./generated/ GENERAETD_SRCS)
+
+add_executable(parser ${GENERAETD_SRCS} ${BITS_SRCS})
+
+set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} "-O2")
+
+target_link_libraries(parser fl)
+target_link_libraries(parser y)
