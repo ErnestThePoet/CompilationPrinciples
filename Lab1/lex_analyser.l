@@ -3,13 +3,14 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "../bits/token.h"
+// #include "parser.h"
 
 char buffer[TOKEN_NAME_BUFFER_SIZE];
 
 #define CREATE_TOKEN(TYPE,BISON_TOKEN) \
 do{\
-    GetTokenName(buffer,TYPE);\
-    printf("%s ",buffer);\
+    yylval=CreateToken(yylloc.first_line,yylloc.first_column,TYPE,yytext);\
+    return BISON_TOKEN;\
 }while(false)
 
 #define YYSTYPE Token*
