@@ -2,12 +2,11 @@
 #define TOKEN_H_
 
 #include <stddef.h>
-#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include "defs.h"
 
-#define TOKEN_MAX_VALUE_LENGTH 50
+#define TOKEN_VALUE_MAX_LENGTH 50
 #define TOKEN_NAME_BUFFER_SIZE 30
 
 // Token types
@@ -59,7 +58,7 @@ typedef struct
     int line_start;
     int column_start;
     int type;
-    char value[TOKEN_MAX_VALUE_LENGTH + 1];
+    char value[TOKEN_VALUE_MAX_LENGTH + 1];
 } Token;
 
 Token *CreateToken(const int line_start,

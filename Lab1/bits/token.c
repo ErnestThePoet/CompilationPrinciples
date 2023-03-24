@@ -5,7 +5,7 @@ Token *CreateToken(const int line_start,
                    const int type,
                    const char *value)
 {
-    Token *token = malloc(sizeof(Token));
+    Token *token = (Token *)malloc(sizeof(Token));
     if (token == NULL)
     {
         MEMORY_ALLOC_FAILURE_EXIT;
@@ -19,7 +19,7 @@ Token *CreateToken(const int line_start,
     {
         size_t value_length = strlen(value);
 
-        if (value_length > TOKEN_MAX_VALUE_LENGTH)
+        if (value_length > TOKEN_VALUE_MAX_LENGTH)
         {
             fprintf(stderr,
                     "Token value length too long: Line %d, Column %d\n",

@@ -3,28 +3,13 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "../bits/token.h"
-// #include "parser.h"
-
-char buffer[TOKEN_NAME_BUFFER_SIZE];
+#include "parser.h"
 
 #define CREATE_TOKEN(TYPE,BISON_TOKEN) \
 do{\
     yylval=CreateToken(yylloc.first_line,yylloc.first_column,TYPE,yytext);\
     return BISON_TOKEN;\
 }while(false)
-
-#define YYSTYPE Token*
-
-typedef struct
-{
-  int first_line;
-  int first_column;
-  int last_line;
-  int last_column;
-}YYLTYPE;
-
-YYSTYPE yylval;
-YYLTYPE yylloc;
 
 #define YY_USER_ACTION \
     do{\
@@ -45,9 +30,11 @@ size_t current_column=1;
 nondigit_ [_[:alpha:]]
 id {nondigit_}([_[:alnum:]])*
 /* Integer Literal(better coverage than C--) */
-literal_int_dec ([[:digit:]]{-}[0])[[:digit:]]*
-literal_int_hex 0[xX][[:xdigit:]]+
-literal_int_oct 0[01234567]*
+int_suffix_ [uU]([lL]|ll|LL)?
+int_suffix_opt_ {int_suffix_}?
+literal_int_dec ([[:digit:]]{-}[0])[[:digit:]]*{int_suffix_opt_}
+literal_int_hex 0[xX][[:xdigit:]]+{int_suffix_opt_}
+literal_int_oct 0[01234567]*{int_suffix_opt_}
 /* Decimal Floating Point Literal(better coverage than C--) */
 digit_seq_ [[:digit:]]+
 digit_seq_opt_ [[:digit:]]*
