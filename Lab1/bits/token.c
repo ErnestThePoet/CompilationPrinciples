@@ -43,11 +43,8 @@ void FreeToken(Token *token)
 }
 
 #define COPY_TOKEN_NAME_BREAK(NAME) \
-    do                              \
-    {                               \
-        strcpy(buffer, NAME);       \
-        break;                      \
-    } while (false)
+    strcpy(buffer, NAME);           \
+    break
 
 void GetTokenName(char *buffer, const int type)
 {

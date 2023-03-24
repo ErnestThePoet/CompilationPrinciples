@@ -8,6 +8,7 @@
 #include "defs.h"
 
 #define TOKEN_MAX_VALUE_LENGTH 50
+#define TOKEN_NAME_BUFFER_SIZE 30
 
 // Token types
 #define TOKEN_UNKNOWN -1

@@ -7,11 +7,11 @@
 
 typedef Token KTreeNodeValue;
 
-typedef struct
+typedef struct KTreeNode_
 {
     KTreeNodeValue value;
-    KTreeNode *l_child = NULL;
-    KTreeNode *r_sibling = NULL;
+    struct KTreeNode_ *l_child;
+    struct KTreeNode_ *r_sibling;
 } KTreeNode;
 
 KTreeNode *CreateKTree();

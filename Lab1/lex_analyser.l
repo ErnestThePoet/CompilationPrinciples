@@ -1,15 +1,29 @@
 %{
 #include <stddef.h>
+#include <stdio.h>
 #include <stdbool.h>
 #include "../bits/token.h"
 
+char buffer[TOKEN_NAME_BUFFER_SIZE];
+
 #define CREATE_TOKEN(TYPE,BISON_TOKEN) \
 do{\
-    yylval=CreateToken(yylloc.first_line,yylloc.first_column,TYPE,yytext);\
-    return BISON_TOKEN;
+    GetTokenName(buffer,TYPE);\
+    printf("%s ",buffer);\
 }while(false)
 
 #define YYSTYPE Token*
+
+typedef struct
+{
+  int first_line;
+  int first_column;
+  int last_line;
+  int last_column;
+}YYLTYPE;
+
+YYSTYPE yylval;
+YYLTYPE yylloc;
 
 #define YY_USER_ACTION \
     do{\
@@ -34,8 +48,8 @@ literal_int_dec ([[:digit:]]{-}[0])[[:digit:]]*
 literal_int_hex 0[xX][[:xdigit:]]+
 literal_int_oct 0[01234567]*
 /* Decimal Floating Point Literal(better coverage than C--) */
-digit_seq_ [:digit:]+
-digit_seq_opt_ [:digit:]*
+digit_seq_ [[:digit:]]+
+digit_seq_opt_ [[:digit:]]*
 frac_ ({digit_seq_opt_}\.{digit_seq_})|({digit_seq_}\.)
 exp_ [eE][+-]?{digit_seq_}
 exp_opt_ {exp_}?
@@ -68,7 +82,7 @@ operator_logical_not !
 operator_add \+
 operator_sub -
 operator_mul \*
-operator_div /
+operator_div \/
 operator_rel_eq ==
 operator_rel_ne !=
 operator_rel_gt >
@@ -83,50 +97,49 @@ whitespace [\t ]
 
 %%
 
-/* Identifier */
+{keyword_type_int} {CREATE_TOKEN(TOKEN_KEYWORD_TYPE_INT,TYPE_INT);}
+{keyword_type_float} {CREATE_TOKEN(TOKEN_KEYWORD_TYPE_FLOAT,TYPE_FLOAT);}
+{keyword_struct} {CREATE_TOKEN(TOKEN_KEYWORD_STRUCT,STRUCT);}
+{keyword_if} {CREATE_TOKEN(TOKEN_KEYWORD_IF,IF);}
+{keyword_else} {CREATE_TOKEN(TOKEN_KEYWORD_ELSE,ELSE);}
+{keyword_while} {CREATE_TOKEN(TOKEN_KEYWORD_WHILE,WHILE);}
+{keyword_return} {CREATE_TOKEN(TOKEN_KEYWORD_RETURN,RETURN);}
+
 {id} {CREATE_TOKEN(TOKEN_ID,ID);}
-/* Integer Literal */
+
 {literal_int_dec} {CREATE_TOKEN(TOKEN_LITERAL_INT,LITERAL_INT);}
 {literal_int_hex} {CREATE_TOKEN(TOKEN_LITERAL_INT,LITERAL_INT);}
 {literal_int_oct} {CREATE_TOKEN(TOKEN_LITERAL_INT,LITERAL_INT);}
-/* Decimal Floating Point Literal */
+
 {literal_fp_dec} {CREATE_TOKEN(TOKEN_LITERAL_FP,LITERAL_FP);}
-/* Keywords */
-{keyword_type_int} {CREATE_TOKEN(TOKEN_KEYWORD_TYPE_INT,KEYWORD_TYPE_INT);}
-{keyword_type_float} {CREATE_TOKEN(TOKEN_KEYWORD_TYPE_FLOAT,KEYWORD_TYPE_FP);}
-{keyword_struct} {CREATE_TOKEN(TOKEN_KEYWORD_STRUCT,KEYWORD_STRUCT);}
-{keyword_if} {CREATE_TOKEN(TOKEN_KEYWORD_IF,KEYWORD_TYPE_IF);}
-{keyword_else} {CREATE_TOKEN(TOKEN_KEYWORD_ELSE,KEYWORD_TYPE_ELSE);}
-{keyword_while} {CREATE_TOKEN(TOKEN_KEYWORD_WHILE,KEYWORD_TYPE_WHILE);}
-{keyword_return} {CREATE_TOKEN(TOKEN_KEYWORD_RETURN,KEYWORD_TYPE_RETURN);}
-/* Delimiters */
-{delimiter_l_bracket} 
-{delimiter_r_bracket} 
-{delimiter_l_brace} 
-{delimiter_r_brace} 
-{delimiter_l_square} 
-{delimiter_r_square} 
-{delimiter_semicolon} 
-/* Operators */
-{operator_dot} 
-{operator_comma} 
-{operator_assign} 
-{operator_logical_and} 
-{operator_logical_or} 
-{operator_logical_not} 
-{operator_add} 
-{operator_sub} 
-{operator_mul} 
-{operator_div} 
-{operator_rel_eq} 
-{operator_rel_ne} 
-{operator_rel_gt} 
-{operator_rel_lt} 
-{operator_rel_ge} 
-{operator_rel_le} 
-/* Misc */
-{line_terminator} 
-{whitespace} 
+
+{delimiter_l_bracket} {CREATE_TOKEN(TOKEN_DELIMITER_L_BRACKET,L_BRACKET);}
+{delimiter_r_bracket} {CREATE_TOKEN(TOKEN_DELIMITER_R_BRACKET,R_BRACKET);}
+{delimiter_l_brace} {CREATE_TOKEN(TOKEN_DELIMITER_L_BRACE,L_BRACE);}
+{delimiter_r_brace} {CREATE_TOKEN(TOKEN_DELIMITER_R_BRACE,R_BRACE);}
+{delimiter_l_square} {CREATE_TOKEN(TOKEN_DELIMITER_L_SQUARE,L_SQUARE);}
+{delimiter_r_square} {CREATE_TOKEN(TOKEN_DELIMITER_R_SQUARE,R_SQUARE);}
+{delimiter_semicolon} {CREATE_TOKEN(TOKEN_DELIMITER_SEMICOLON,SEMICOLON);}
+
+{operator_dot} {CREATE_TOKEN(TOKEN_OPERATOR_DOT,DOT);}
+{operator_comma} {CREATE_TOKEN(TOKEN_OPERATOR_COMMA,COMMA);}
+{operator_assign} {CREATE_TOKEN(TOKEN_OPERATOR_ASSIGN,ASSIGN);}
+{operator_logical_and} {CREATE_TOKEN(TOKEN_OPERATOR_LOGICAL_AND,AND);}
+{operator_logical_or} {CREATE_TOKEN(TOKEN_OPERATOR_LOGICAL_OR,OR);}
+{operator_logical_not} {CREATE_TOKEN(TOKEN_OPERATOR_LOGICAL_NOT,NOT);}
+{operator_add} {CREATE_TOKEN(TOKEN_OPERATOR_ADD,ADD);}
+{operator_sub} {CREATE_TOKEN(TOKEN_OPERATOR_SUB,SUB);}
+{operator_mul} {CREATE_TOKEN(TOKEN_OPERATOR_MUL,MUL);}
+{operator_div} {CREATE_TOKEN(TOKEN_OPERATOR_DIV,DIV);}
+{operator_rel_eq} {CREATE_TOKEN(TOKEN_OPERATOR_REL_EQ,RELOP);}
+{operator_rel_ne} {CREATE_TOKEN(TOKEN_OPERATOR_REL_NE,RELOP);}
+{operator_rel_gt} {CREATE_TOKEN(TOKEN_OPERATOR_REL_GT,RELOP);}
+{operator_rel_lt} {CREATE_TOKEN(TOKEN_OPERATOR_REL_LT,RELOP);}
+{operator_rel_ge} {CREATE_TOKEN(TOKEN_OPERATOR_REL_GE,RELOP);}
+{operator_rel_le} {CREATE_TOKEN(TOKEN_OPERATOR_REL_LE,RELOP);}
+
+{line_terminator} {current_column=1;}
+{whitespace} {;}
 
 . {printf(
     "Error type A at Line %d: Lexical analyser encountered unexpected '%s' \n",
