@@ -1,6 +1,7 @@
 #ifndef DEFS_H_
 #define DEFS_H_
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -11,6 +12,6 @@
     {                                                \
         fputs("Memory allocation failed\n", stderr); \
         exit(FAILURE);                               \
-    } while (0)
+    } while (false)
 
 #endif

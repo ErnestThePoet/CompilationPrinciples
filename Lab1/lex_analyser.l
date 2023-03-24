@@ -3,6 +3,12 @@
 #include <stdbool.h>
 #include "../bits/token.h"
 
+#define CREATE_TOKEN(TYPE,BISON_TOKEN) \
+do{\
+    yylval=CreateToken(yylloc.first_line,yylloc.first_column,TYPE,yytext);\
+    return BISON_TOKEN;
+}while(false)
+
 #define YYSTYPE Token*
 
 #define YY_USER_ACTION \
@@ -77,8 +83,51 @@ whitespace [\t ]
 
 %%
 
-[ ]+ {}
-[\r\n] {current_column=1;}
+/* Identifier */
+{id} {CREATE_TOKEN(TOKEN_ID,ID);}
+/* Integer Literal */
+{literal_int_dec} {CREATE_TOKEN(TOKEN_LITERAL_INT,LITERAL_INT);}
+{literal_int_hex} {CREATE_TOKEN(TOKEN_LITERAL_INT,LITERAL_INT);}
+{literal_int_oct} {CREATE_TOKEN(TOKEN_LITERAL_INT,LITERAL_INT);}
+/* Decimal Floating Point Literal */
+{literal_fp_dec} {CREATE_TOKEN(TOKEN_LITERAL_FP,LITERAL_FP);}
+/* Keywords */
+{keyword_type_int} {CREATE_TOKEN(TOKEN_KEYWORD_TYPE_INT,KEYWORD_TYPE_INT);}
+{keyword_type_float} {CREATE_TOKEN(TOKEN_KEYWORD_TYPE_FLOAT,KEYWORD_TYPE_FP);}
+{keyword_struct} {CREATE_TOKEN(TOKEN_KEYWORD_STRUCT,KEYWORD_STRUCT);}
+{keyword_if} {CREATE_TOKEN(TOKEN_KEYWORD_IF,KEYWORD_TYPE_IF);}
+{keyword_else} {CREATE_TOKEN(TOKEN_KEYWORD_ELSE,KEYWORD_TYPE_ELSE);}
+{keyword_while} {CREATE_TOKEN(TOKEN_KEYWORD_WHILE,KEYWORD_TYPE_WHILE);}
+{keyword_return} {CREATE_TOKEN(TOKEN_KEYWORD_RETURN,KEYWORD_TYPE_RETURN);}
+/* Delimiters */
+{delimiter_l_bracket} 
+{delimiter_r_bracket} 
+{delimiter_l_brace} 
+{delimiter_r_brace} 
+{delimiter_l_square} 
+{delimiter_r_square} 
+{delimiter_semicolon} 
+/* Operators */
+{operator_dot} 
+{operator_comma} 
+{operator_assign} 
+{operator_logical_and} 
+{operator_logical_or} 
+{operator_logical_not} 
+{operator_add} 
+{operator_sub} 
+{operator_mul} 
+{operator_div} 
+{operator_rel_eq} 
+{operator_rel_ne} 
+{operator_rel_gt} 
+{operator_rel_lt} 
+{operator_rel_ge} 
+{operator_rel_le} 
+/* Misc */
+{line_terminator} 
+{whitespace} 
+
 . {printf(
     "Error type A at Line %d: Lexical analyser encountered unexpected '%s' \n",
     yylineno,
