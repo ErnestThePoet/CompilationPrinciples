@@ -9,6 +9,9 @@ KTreeNode *kRoot = NULL;
 bool kHasLexicalError = false;
 bool kHasSyntaxError = false;
 
+extern int yyparse(void);
+extern void yyrestart(FILE *input_file);
+
 void FreeKTreeNode(KTreeNodeValue *node)
 {
     AstNodeFree(*node);

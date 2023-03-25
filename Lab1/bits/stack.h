@@ -7,7 +7,7 @@
 #include "defs.h"
 #include "k_tree.h"
 
-const size_t kStackInitialCapacity = 50;
+#define STACK_INITIAL_CAPACITY 50
 
 typedef KTreeNode *StackElement;
 

@@ -8,13 +8,13 @@ Stack *StackCreate()
         MEMORY_ALLOC_FAILURE_EXIT;
     }
 
-    stack->base_ = (StackElement *)malloc(kStackInitialCapacity * sizeof(StackElement));
+    stack->base_ = (StackElement *)malloc(STACK_INITIAL_CAPACITY * sizeof(StackElement));
     if (stack->base_ == NULL)
     {
         MEMORY_ALLOC_FAILURE_EXIT;
     }
 
-    stack->capacity_ = kStackInitialCapacity;
+    stack->capacity_ = STACK_INITIAL_CAPACITY;
     stack->size = 0;
 
     return stack;
@@ -66,7 +66,7 @@ StackElement StackPop(Stack *stack)
 
     StackElement top_element = stack->base_[stack->size - 1];
 
-    if (stack->size - 1 >= kStackInitialCapacity && stack->size - 1 <= stack->capacity_ / 2)
+    if (stack->size - 1 >= STACK_INITIAL_CAPACITY && stack->size - 1 <= stack->capacity_ / 2)
     {
         stack->capacity_ /= 2;
         stack->base_ = realloc(stack->base_, stack->capacity_);

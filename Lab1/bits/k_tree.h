@@ -5,11 +5,8 @@
 #include <stdarg.h>
 #include "defs.h"
 #include "ast_node.h"
-#include "stack.h"
 
 typedef AstNode *KTreeNodeValue;
-typedef void (*KTreeNodeTraverseAction)(KTreeNode *, size_t);
-typedef void (*KTreeNodeFreeValueAction)(KTreeNodeValue *);
 
 typedef struct KTreeNode_
 {
@@ -18,6 +15,11 @@ typedef struct KTreeNode_
     struct KTreeNode_ *r_child;
     struct KTreeNode_ *r_sibling;
 } KTreeNode;
+
+typedef void (*KTreeNodeTraverseAction)(KTreeNode *, size_t);
+typedef void (*KTreeNodeFreeValueAction)(KTreeNodeValue *);
+
+#include "stack.h"
 
 static KTreeNodeFreeValueAction KTreeFreeNodeValue = NULL;
 static void KTreeFreeNode_(KTreeNode *node, size_t);
