@@ -5,6 +5,8 @@ aux_source_directory(./generated/ GENERAETD_SRCS)
 
 add_executable(parser ${GENERAETD_SRCS} ${BITS_SRCS})
 
+# set(CMAKE_BUILD_TYPE Debug)
+# set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "-rdynamic")
 set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} "-O2")
 
 target_link_libraries(parser fl)

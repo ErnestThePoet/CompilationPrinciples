@@ -79,6 +79,8 @@ void yyerror(const char* msg){
 %nonassoc LOWER_THAN_ELSE
 %nonassoc ELSE
 
+%define parse.error detailed
+
 %%
 Program:ExtDefList {CREATE_VARIABLE_NODE(@$,$$,"Program",1,$1);kRoot=$$;}
     ;

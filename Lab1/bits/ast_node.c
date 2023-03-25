@@ -18,6 +18,8 @@ AstNode *AstNodeCreate(bool is_token,
     {
         node->ast_node_value.variable = (Variable *)ast_node_value;
     }
+    
+    return node;
 }
 
 void AstNodeFree(AstNode *node)

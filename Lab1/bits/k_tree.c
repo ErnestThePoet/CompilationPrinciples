@@ -30,7 +30,11 @@ KTreeNode *KTreeCreateNodeWithChidren(KTreeNodeValue *value, int argc, ...)
 
     for (int i = 0; i < argc; i++)
     {
-        KTreeAddChildRight(root, va_arg(children, KTreeNode *));
+        KTreeNode *current_child = va_arg(children, KTreeNode *);
+        // Avoid epsilon patterns
+        if(current_child!=NULL){
+            KTreeAddChildRight(root, current_child);
+        }
     }
 
     va_end(children);
@@ -60,6 +64,7 @@ void KTreeAddChildRight(KTreeNode *root, KTreeNode *child)
     else
     {
         root->r_child->r_sibling = child;
+        root->r_child = child;
     }
 }
 
@@ -86,4 +91,6 @@ void KTreePreOrderTraverse(KTreeNode *root, KTreeNodeTraverseAction action)
             current_level--;
         }
     }
+
+    StackFree(stack);
 }
