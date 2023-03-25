@@ -45,24 +45,27 @@ int main(int argc, char *argv[])
     if (argc == 1)
     {
         yyparse();
-        return SUCCESS;
     }
-
-    FILE *source_file = fopen(argv[1], "r");
-    if (source_file == NULL)
+    else
     {
-        fprintf(stderr, "Failed to open %s\n", argv[1]);
-        return FAILURE;
+        FILE *source_file = fopen(argv[1], "r");
+        if (source_file == NULL)
+        {
+            fprintf(stderr, "Failed to open %s\n", argv[1]);
+            return FAILURE;
+        }
+
+        yyrestart(source_file);
+        yyparse();
+
+        fclose(source_file);
     }
 
-    yyrestart(source_file);
-    yyparse();
     if (!kHasLexicalError && !kHasSyntaxError)
     {
         KTreePreOrderTraverse(kRoot, PrintAstNode);
     }
 
-    fclose(source_file);
     FreeKTree(kRoot, FreeKTreeNode);
 
     return SUCCESS;

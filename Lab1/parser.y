@@ -16,7 +16,7 @@
 do{\
     Variable* variable=VariableCreate(LOC.first_line,LOC.first_column,NAME);\
     AstNode* ast_node=AstNodeCreate(false,variable);\
-    VAL=KTreeCreateNodeWithChidren(&ast_node,ARGC,#__VA_ARGS__);\
+    VAL=KTreeCreateNodeWithChidren(&ast_node,ARGC,##__VA_ARGS__);\
 }while(false)
 
 #define CREATE_EMPTY_VARIABLE_NODE(VAL) \

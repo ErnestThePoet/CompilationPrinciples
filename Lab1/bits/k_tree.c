@@ -34,6 +34,8 @@ KTreeNode *KTreeCreateNodeWithChidren(KTreeNodeValue *value, int argc, ...)
     }
 
     va_end(children);
+
+    return root;
 }
 
 void FreeKTree(KTreeNode *root, KTreeNodeFreeValueAction action)

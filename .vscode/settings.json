@@ -7,6 +7,7 @@
         "stdbool.h": "c",
         "variable.h": "c",
         "k_tree.h": "c",
-        "ast_node.h": "c"
+        "ast_node.h": "c",
+        "execinfo.h": "c"
     }
 }
