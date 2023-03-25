@@ -1,6 +1,6 @@
 #include "variable.h"
 
-Variable *CreateVariable(const int line_start,
+Variable *VariableCreate(const int line_start,
                          const int column_start,
                          const char *name)
 {
@@ -29,7 +29,7 @@ Variable *CreateVariable(const int line_start,
     return variable;
 }
 
-void FreeVariable(Variable *variable)
+void VariableFree(Variable *variable)
 {
     if (variable != NULL)
     {

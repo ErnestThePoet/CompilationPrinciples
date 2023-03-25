@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define SUCCESS 0
 #define FAILURE 1
 
 #define MEMORY_ALLOC_FAILURE_EXIT                    \

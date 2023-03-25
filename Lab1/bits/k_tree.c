@@ -1,33 +1,48 @@
 #include "k_tree.h"
 
-static void FreeKTreeNode(KTreeNode *node, size_t)
+static void KTreeFreeNode_(KTreeNode *node, size_t)
 {
-    FreeKTreeNodeValue(&node->value);
+    KTreeFreeNodeValue(&node->value);
 }
 
-KTreeNode *CreateKTree(KTreeNodeValue *value)
+KTreeNode *KTreeCreateNode(KTreeNodeValue *value)
 {
-    KTreeNode *root = (KTreeNode *)malloc(sizeof(KTreeNode));
-    if (root == NULL)
+    KTreeNode *node = (KTreeNode *)malloc(sizeof(KTreeNode));
+    if (node == NULL)
     {
         MEMORY_ALLOC_FAILURE_EXIT;
     }
 
-    root->l_child = NULL;
-    root->r_child = NULL;
-    root->r_sibling = NULL;
-    root->value = *value;
+    node->l_child = NULL;
+    node->r_child = NULL;
+    node->r_sibling = NULL;
+    node->value = *value;
 
-    return root;
+    return node;
+}
+
+KTreeNode *KTreeCreateNodeWithChidren(KTreeNodeValue *value, int argc, ...)
+{
+    KTreeNode *root = KTreeCreateNode(value);
+
+    va_list children;
+    va_start(children, argc);
+
+    for (int i = 0; i < argc; i++)
+    {
+        KTreeAddChildRight(root, va_arg(children, KTreeNode *));
+    }
+
+    va_end(children);
 }
 
 void FreeKTree(KTreeNode *root, KTreeNodeFreeValueAction action)
 {
-    FreeKTreeNodeValue = action;
-    PreOrderTraverse(root, FreeKTreeNode);
+    KTreeFreeNodeValue = action;
+    KTreePreOrderTraverse(root, KTreeFreeNode_);
 }
 
-void AddChildRight(KTreeNode *root, KTreeNode *child)
+void KTreeAddChildRight(KTreeNode *root, KTreeNode *child)
 {
     // Empty root
     if (root->l_child == NULL)
@@ -46,26 +61,26 @@ void AddChildRight(KTreeNode *root, KTreeNode *child)
     }
 }
 
-void PreOrderTraverse(KTreeNode *root, KTreeNodeTraverseAction action)
+void KTreePreOrderTraverse(KTreeNode *root, KTreeNodeTraverseAction action)
 {
-    Stack *stack = CreateStack();
+    Stack *stack = StackCreate();
 
     KTreeNode *current_node = root;
 
     size_t current_level = 0;
 
-    while (!IsEmpty(stack) || current_node != NULL)
+    while (!StackIsEmpty(stack) || current_node != NULL)
     {
         if (current_node != NULL)
         {
             action(current_node, current_level);
-            Push(stack, &current_node);
+            StackPush(stack, &current_node);
             current_node = current_node->l_child;
             current_level++;
         }
         else
         {
-            current_node = Pop(stack)->r_sibling;
+            current_node = StackPop(stack)->r_sibling;
             current_level--;
         }
     }

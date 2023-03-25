@@ -1,6 +1,6 @@
 #include "token.h"
 
-Token *CreateToken(const int line_start,
+Token *TokenCreate(const int line_start,
                    const int column_start,
                    const int type,
                    const char *value)
@@ -34,7 +34,7 @@ Token *CreateToken(const int line_start,
     return token;
 }
 
-void FreeToken(Token *token)
+void TokenFree(Token *token)
 {
     if (token != NULL)
     {

@@ -1,6 +1,6 @@
 #include "stack.h"
 
-Stack *CreateStack()
+Stack *StackCreate()
 {
     Stack *stack = (Stack *)malloc(sizeof(Stack));
     if (stack == NULL)
@@ -20,7 +20,7 @@ Stack *CreateStack()
     return stack;
 }
 
-void FreeStack(Stack *stack)
+void StackFree(Stack *stack)
 {
     if (stack == NULL)
     {
@@ -35,12 +35,12 @@ void FreeStack(Stack *stack)
     free(stack);
 }
 
-bool IsEmpty(const Stack *stack)
+bool StackIsEmpty(const Stack *stack)
 {
     return stack->size == 0;
 }
 
-void Push(Stack *stack, StackElement *element)
+void StackPush(Stack *stack, StackElement *element)
 {
     if (stack->size + 1 > stack->capacity_)
     {
@@ -56,11 +56,11 @@ void Push(Stack *stack, StackElement *element)
     stack->size++;
 }
 
-StackElement Pop(Stack *stack)
+StackElement StackPop(Stack *stack)
 {
     if (stack->size == 0)
     {
-        fputs("Call Pop() on an empty stack\n", stderr);
+        fputs("Call StackPop() on an empty stack\n", stderr);
         exit(FAILURE);
     }
 

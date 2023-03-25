@@ -61,12 +61,12 @@ typedef struct
     char value[TOKEN_VALUE_MAX_LENGTH + 1];
 } Token;
 
-Token *CreateToken(const int line_start,
+Token *TokenCreate(const int line_start,
                    const int column_start,
                    const int type,
                    const char *value);
 
-void FreeToken(Token *token);
+void TokenFree(Token *token);
 
 void GetTokenName(char *buffer, const int type);
 

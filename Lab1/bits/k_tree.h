@@ -2,6 +2,7 @@
 #define K_TREE_H_
 
 #include <stdlib.h>
+#include <stdarg.h>
 #include "defs.h"
 #include "ast_node.h"
 #include "stack.h"
@@ -18,12 +19,13 @@ typedef struct KTreeNode_
     struct KTreeNode_ *r_sibling;
 } KTreeNode;
 
-static KTreeNodeFreeValueAction FreeKTreeNodeValue = NULL;
-static void FreeKTreeNode(KTreeNode *node, size_t);
+static KTreeNodeFreeValueAction KTreeFreeNodeValue = NULL;
+static void KTreeFreeNode_(KTreeNode *node, size_t);
 
-KTreeNode *CreateKTree(KTreeNodeValue *value);
+KTreeNode *KTreeCreateNode(KTreeNodeValue *value);
+KTreeNode *KTreeCreateNodeWithChidren(KTreeNodeValue *value, int argc, ...);
 void FreeKTree(KTreeNode *root, KTreeNodeFreeValueAction action);
-void AddChildRight(KTreeNode *root, KTreeNode *child);
-void PreOrderTraverse(KTreeNode *root, KTreeNodeTraverseAction action);
+void KTreeAddChildRight(KTreeNode *root, KTreeNode *child);
+void KTreePreOrderTraverse(KTreeNode *root, KTreeNodeTraverseAction action);
 
 #endif

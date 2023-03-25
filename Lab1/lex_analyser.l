@@ -3,11 +3,17 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "../bits/token.h"
+#include "../bits/ast_node.h"
+#include "../bits/k_tree.h"
 #include "parser.h"
 
-#define CREATE_TOKEN(TYPE,BISON_TOKEN) \
+typedef KTreeNode* YYSTYPE
+
+#define CREATE_TOKEN_NODE(TYPE,BISON_TOKEN) \
 do{\
-    yylval=CreateToken(yylloc.first_line,yylloc.first_column,TYPE,yytext);\
+    Token* token=TokenCreate(yylloc.first_line,yylloc.first_column,TYPE,yytext);\
+    AstNode* ast_node=AstNodeCreate(true,token);
+    yylval=KTreeCreateNode(&ast_node);
     return BISON_TOKEN;\
 }while(false)
 
@@ -22,6 +28,8 @@ do{\
 
 // Line and column numbers start from 1
 size_t current_column=1;
+
+extern bool kHasLexicalError;
 
 %}
 
@@ -129,12 +137,9 @@ whitespace [\t ]
 {line_terminator} {current_column=1;}
 {whitespace} {;}
 
-. {printf(
-    "Error type A at Line %d: Lexical analyser encountered unexpected '%s' \n",
+. {kHasLexicalError=true;
+    printf(
+    "Error type A at line %d: Lexical analyser encountered unexpected '%s' \n",
     yylineno,
     yytext);}
 %%
-int main(void){
-    yylex();
-    return 0;
-}

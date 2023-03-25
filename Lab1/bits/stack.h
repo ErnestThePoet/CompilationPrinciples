@@ -18,10 +18,10 @@ typedef struct
     StackElement *base_;
 } Stack;
 
-Stack *CreateStack();
-void FreeStack(Stack *stack);
-bool IsEmpty(const Stack *stack);
-void Push(Stack *stack, StackElement *element);
-StackElement Pop(Stack *stack);
+Stack *StackCreate();
+void StackFree(Stack *stack);
+bool StackIsEmpty(const Stack *stack);
+void StackPush(Stack *stack, StackElement *element);
+StackElement StackPop(Stack *stack);
 
 #endif
