@@ -24,6 +24,11 @@ do{\
     VAL=NULL;\
 }while(false)
 
+#define MARK_SYNTAX_ERROR \
+do{\
+    kHasSyntaxError=true;\
+}while(false)
+
 extern KTreeNode* kRoot;
 extern bool kHasSyntaxError;
 
@@ -91,7 +96,7 @@ ExtDefList: ExtDef ExtDefList {CREATE_VARIABLE_NODE(@$,$$,"ExtDefList", 2, $1, $
 ExtDef: Specifier ExtDecList SEMICOLON {CREATE_VARIABLE_NODE(@$,$$,"ExtDef", 3, $1, $2, $3);}
     | Specifier SEMICOLON {CREATE_VARIABLE_NODE(@$,$$,"ExtDef", 2, $1, $2);}
     | Specifier FunDec CompSt {CREATE_VARIABLE_NODE(@$,$$,"ExtDef", 3, $1, $2, $3);}
-    | error SEMICOLON {kHasSyntaxError = true;}
+    | error SEMICOLON {MARK_SYNTAX_ERROR;}
     ; 
 ExtDecList: VarDec {CREATE_VARIABLE_NODE(@$,$$,"ExtDecList", 1, $1);}
     | VarDec COMMA ExtDecList {CREATE_VARIABLE_NODE(@$,$$,"ExtDecList", 3, $1, $2, $3);}
@@ -112,11 +117,11 @@ Tag: ID {CREATE_VARIABLE_NODE(@$,$$,"Tag", 1, $1);}
 
 VarDec: ID {CREATE_VARIABLE_NODE(@$,$$,"VarDec", 1, $1);}
     | VarDec L_SQUARE LITERAL_INT R_SQUARE {CREATE_VARIABLE_NODE(@$,$$,"VarDec", 4, $1, $2, $3, $4);}
-    | error R_SQUARE {kHasSyntaxError = true;}
+    | error R_SQUARE {MARK_SYNTAX_ERROR;}
     ; 
 FunDec: ID L_BRACKET VarList R_BRACKET {CREATE_VARIABLE_NODE(@$,$$,"FunDec", 4, $1, $2, $3, $4);}
     | ID L_BRACKET R_BRACKET {CREATE_VARIABLE_NODE(@$,$$,"FunDec", 3, $1, $2, $3);}
-    | error R_BRACKET {kHasSyntaxError = true;}
+    | error R_BRACKET {MARK_SYNTAX_ERROR;}
     ; 
 VarList: ParamDec COMMA VarList {CREATE_VARIABLE_NODE(@$,$$,"VarList", 3, $1, $2, $3);}
     | ParamDec {CREATE_VARIABLE_NODE(@$,$$,"VarList", 1, $1);}
@@ -125,7 +130,7 @@ ParamDec: Specifier VarDec {CREATE_VARIABLE_NODE(@$,$$,"ParamDec", 2, $1, $2);}
     ; 
 
 CompSt: L_BRACE DefList StmtList R_BRACE {CREATE_VARIABLE_NODE(@$,$$,"CompSt", 4, $1, $2, $3, $4);}
-    | error R_BRACE {kHasSyntaxError = true;}
+    | error R_BRACE {MARK_SYNTAX_ERROR;}
     ; 
 StmtList: Stmt StmtList {CREATE_VARIABLE_NODE(@$,$$,"StmtList", 2, $1, $2);}
     | {CREATE_EMPTY_VARIABLE_NODE($$);}
@@ -136,7 +141,7 @@ Stmt: Exp SEMICOLON {CREATE_VARIABLE_NODE(@$,$$,"Stmt", 2, $1, $2);}
     | IF L_BRACKET Exp R_BRACKET Stmt %prec LOWER_THAN_ELSE {CREATE_VARIABLE_NODE(@$,$$,"Stmt", 5, $1, $2, $3, $4, $5);}
     | IF L_BRACKET Exp R_BRACKET Stmt ELSE Stmt {CREATE_VARIABLE_NODE(@$,$$,"Stmt", 7, $1, $2, $3, $4, $5, $6, $7);}
     | WHILE L_BRACKET Exp R_BRACKET Stmt {CREATE_VARIABLE_NODE(@$,$$,"Stmt", 5, $1, $2, $3, $4, $5);}
-    | error SEMICOLON {kHasSyntaxError = true;}
+    | error SEMICOLON {MARK_SYNTAX_ERROR;}
     ; 
 
 DefList: Def DefList {CREATE_VARIABLE_NODE(@$,$$,"DefList", 2, $1, $2);}
