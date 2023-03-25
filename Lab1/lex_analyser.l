@@ -86,10 +86,25 @@ operator_rel_le <=
 /* Misc */
 line_terminator [\r\n]
 whitespace [\t ]
+/* Comments */
+line_comment_prefix_ \/\/
+line_comment {line_comment_prefix_}.*
+
+%x BLOCK_COMMENT
+block_comment_prefix \/\*
+block_comment_suffix \*\/
 
 %option yylineno
 
 %%
+
+{line_terminator} {current_column=1;}
+{whitespace} {;}
+{line_comment} {;}
+{block_comment_prefix} {BEGIN(BLOCK_COMMENT);}
+<BLOCK_COMMENT>{block_comment_suffix} {BEGIN(INITIAL);}
+<BLOCK_COMMENT>{line_terminator} {;}
+<BLOCK_COMMENT>. {;}
 
 {keyword_type_int} {CREATE_TOKEN_NODE(TOKEN_KEYWORD_TYPE_INT,TYPE_INT);}
 {keyword_type_float} {CREATE_TOKEN_NODE(TOKEN_KEYWORD_TYPE_FLOAT,TYPE_FLOAT);}
@@ -131,9 +146,6 @@ whitespace [\t ]
 {operator_rel_lt} {CREATE_TOKEN_NODE(TOKEN_OPERATOR_REL_LT,RELOP);}
 {operator_rel_ge} {CREATE_TOKEN_NODE(TOKEN_OPERATOR_REL_GE,RELOP);}
 {operator_rel_le} {CREATE_TOKEN_NODE(TOKEN_OPERATOR_REL_LE,RELOP);}
-
-{line_terminator} {current_column=1;}
-{whitespace} {;}
 
 . {kHasLexicalError=true;
     fprintf(
