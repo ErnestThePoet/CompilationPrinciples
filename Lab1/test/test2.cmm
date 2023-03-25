@@ -1,7 +1,7 @@
 int main()
 {
-    float a[1O][2];
+    float a[10][2];
     int i;
-    a[5][3] = 1.5;
-    if (a[1][2] == 0) i = 1; else i = 0;
+    a[5,3] = 1.5;
+    if (a[1][2] == 0) i = 1 else i = 0;
 }
