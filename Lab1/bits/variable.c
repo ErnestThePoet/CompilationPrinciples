@@ -1,12 +1,17 @@
 #include "variable.h"
 
-Variable *CreateVariable(const char *name)
+Variable *CreateVariable(const int line_start,
+                         const int column_start,
+                         const char *name)
 {
     Variable *variable = (Variable *)malloc(sizeof(Variable));
     if (variable == NULL)
     {
         MEMORY_ALLOC_FAILURE_EXIT;
     }
+
+    variable->line_start = line_start;
+    variable->column_start = column_start;
 
     if (name != NULL)
     {
