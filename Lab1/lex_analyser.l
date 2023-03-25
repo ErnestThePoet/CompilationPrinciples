@@ -136,7 +136,8 @@ whitespace [\t ]
 {whitespace} {;}
 
 . {kHasLexicalError=true;
-    printf(
+    fprintf(
+    stderr,
     "Error type A at line %d: Lexical analyser encountered unexpected '%s' \n",
     yylineno,
     yytext);}
