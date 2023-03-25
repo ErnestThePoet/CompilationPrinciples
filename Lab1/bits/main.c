@@ -30,7 +30,19 @@ void PrintAstNode(KTreeNode *node, size_t current_level)
         Token *token = node->value->ast_node_value.token;
         GetTokenName(token_name_buffer, token->type);
 
-        printf("%s: %s\n", token_name_buffer, token->value);
+        switch (token->type)
+        {
+        case TOKEN_ID:
+        case TOKEN_KEYWORD_TYPE_INT:
+        case TOKEN_KEYWORD_TYPE_FLOAT:
+        case TOKEN_LITERAL_INT:
+        case TOKEN_LITERAL_FP:
+            printf("%s: %s\n", token_name_buffer, token->value);
+            break;
+        default:
+            printf("%s\n", token_name_buffer);
+            break;
+        }
     }
     else
     {
