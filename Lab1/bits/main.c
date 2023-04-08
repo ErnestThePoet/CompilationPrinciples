@@ -46,8 +46,10 @@ void PrintAstNode(KTreeNode *node, size_t current_level, void *)
     }
     else
     {
+        char variable_name_buffer[VARIABLE_NAME_BUFFER_SIZE];
+        GetVariableName(variable_name_buffer, node->value->ast_node_value.variable->type);
         printf("%s (%d)\n",
-               node->value->ast_node_value.variable->name,
+               variable_name_buffer,
                node->value->ast_node_value.variable->line_start);
     }
 }

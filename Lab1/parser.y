@@ -12,9 +12,9 @@
 // of a declaration of yylloc
 // VAL($$) is also compulsory because it will not be transpiled
 // inside a macro
-#define CREATE_VARIABLE_NODE(LOC,VAL,NAME,ARGC,...) \
+#define CREATE_VARIABLE_NODE(LOC,VAL,TYPE,ARGC,...) \
 do{\
-    Variable* variable=VariableCreate(LOC.first_line,LOC.first_column,NAME);\
+    Variable* variable=VariableCreate(LOC.first_line,LOC.first_column,TYPE);\
     AstNode* ast_node=AstNodeCreate(false,variable);\
     VAL=KTreeCreateNodeWithChidren(&ast_node,ARGC,##__VA_ARGS__);\
 }while(false)
@@ -87,92 +87,92 @@ void yyerror(const char* msg){
 %define parse.error detailed
 
 %%
-Program:ExtDefList {CREATE_VARIABLE_NODE(@$,$$,"Program",1,$1);kRoot=$$;}
+Program:ExtDefList {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_PROGRAM,1,$1);kRoot=$$;}
     ;
 
-ExtDefList: ExtDef ExtDefList {CREATE_VARIABLE_NODE(@$,$$,"ExtDefList", 2, $1, $2);}
+ExtDefList: ExtDef ExtDefList {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_EXT_DEF_LIST, 2, $1, $2);}
     | {CREATE_EMPTY_VARIABLE_NODE($$);} 
     ; 
-ExtDef: Specifier ExtDecList SEMICOLON {CREATE_VARIABLE_NODE(@$,$$,"ExtDef", 3, $1, $2, $3);}
-    | Specifier SEMICOLON {CREATE_VARIABLE_NODE(@$,$$,"ExtDef", 2, $1, $2);}
-    | Specifier FunDec CompSt {CREATE_VARIABLE_NODE(@$,$$,"ExtDef", 3, $1, $2, $3);}
+ExtDef: Specifier ExtDecList SEMICOLON {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_EXT_DEF, 3, $1, $2, $3);}
+    | Specifier SEMICOLON {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_EXT_DEF, 2, $1, $2);}
+    | Specifier FunDec CompSt {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_EXT_DEF, 3, $1, $2, $3);}
     | error SEMICOLON {MARK_SYNTAX_ERROR;}
     ; 
-ExtDecList: VarDec {CREATE_VARIABLE_NODE(@$,$$,"ExtDecList", 1, $1);}
-    | VarDec COMMA ExtDecList {CREATE_VARIABLE_NODE(@$,$$,"ExtDecList", 3, $1, $2, $3);}
+ExtDecList: VarDec {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_EXT_DEC_LIST, 1, $1);}
+    | VarDec COMMA ExtDecList {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_EXT_DEC_LIST, 3, $1, $2, $3);}
     ; 
 
-Specifier: TYPE_INT {CREATE_VARIABLE_NODE(@$,$$,"Specifier", 1, $1);}
-    | TYPE_FLOAT {CREATE_VARIABLE_NODE(@$,$$,"Specifier", 1, $1);}
-    | StructSpecifier {CREATE_VARIABLE_NODE(@$,$$,"Specifier", 1, $1);}
+Specifier: TYPE_INT {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_SPECIFIER, 1, $1);}
+    | TYPE_FLOAT {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_SPECIFIER, 1, $1);}
+    | StructSpecifier {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_SPECIFIER, 1, $1);}
     ; 
-StructSpecifier: STRUCT OptTag L_BRACE DefList R_BRACE {CREATE_VARIABLE_NODE(@$,$$,"StructSpecifier", 5, $1, $2, $3, $4, $5);}
-    | STRUCT Tag {CREATE_VARIABLE_NODE(@$,$$,"StructSpecifier", 2, $1, $2);}
+StructSpecifier: STRUCT OptTag L_BRACE DefList R_BRACE {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_STRUCT_SPECIFIER, 5, $1, $2, $3, $4, $5);}
+    | STRUCT Tag {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_STRUCT_SPECIFIER, 2, $1, $2);}
     ; 
-OptTag: ID {CREATE_VARIABLE_NODE(@$,$$,"OptTag", 1, $1);}
+OptTag: ID {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_OPT_TAG, 1, $1);}
     | {CREATE_EMPTY_VARIABLE_NODE($$);}
     ; 
-Tag: ID {CREATE_VARIABLE_NODE(@$,$$,"Tag", 1, $1);}
+Tag: ID {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_TAG, 1, $1);}
     ; 
 
-VarDec: ID {CREATE_VARIABLE_NODE(@$,$$,"VarDec", 1, $1);}
-    | VarDec L_SQUARE LITERAL_INT R_SQUARE {CREATE_VARIABLE_NODE(@$,$$,"VarDec", 4, $1, $2, $3, $4);}
+VarDec: ID {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_VAR_DEC, 1, $1);}
+    | VarDec L_SQUARE LITERAL_INT R_SQUARE {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_VAR_DEC, 4, $1, $2, $3, $4);}
     | error R_SQUARE {MARK_SYNTAX_ERROR;}
     ; 
-FunDec: ID L_BRACKET VarList R_BRACKET {CREATE_VARIABLE_NODE(@$,$$,"FunDec", 4, $1, $2, $3, $4);}
-    | ID L_BRACKET R_BRACKET {CREATE_VARIABLE_NODE(@$,$$,"FunDec", 3, $1, $2, $3);}
+FunDec: ID L_BRACKET VarList R_BRACKET {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_FUN_DEC, 4, $1, $2, $3, $4);}
+    | ID L_BRACKET R_BRACKET {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_FUN_DEC, 3, $1, $2, $3);}
     | error R_BRACKET {MARK_SYNTAX_ERROR;}
     ; 
-VarList: ParamDec COMMA VarList {CREATE_VARIABLE_NODE(@$,$$,"VarList", 3, $1, $2, $3);}
-    | ParamDec {CREATE_VARIABLE_NODE(@$,$$,"VarList", 1, $1);}
+VarList: ParamDec COMMA VarList {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_VAR_LIST, 3, $1, $2, $3);}
+    | ParamDec {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_VAR_LIST, 1, $1);}
     ; 
-ParamDec: Specifier VarDec {CREATE_VARIABLE_NODE(@$,$$,"ParamDec", 2, $1, $2);}
+ParamDec: Specifier VarDec {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_PARAM_DEC, 2, $1, $2);}
     ; 
 
-CompSt: L_BRACE DefList StmtList R_BRACE {CREATE_VARIABLE_NODE(@$,$$,"CompSt", 4, $1, $2, $3, $4);}
+CompSt: L_BRACE DefList StmtList R_BRACE {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_COMP_ST, 4, $1, $2, $3, $4);}
     | error R_BRACE {MARK_SYNTAX_ERROR;}
     ; 
-StmtList: Stmt StmtList {CREATE_VARIABLE_NODE(@$,$$,"StmtList", 2, $1, $2);}
+StmtList: Stmt StmtList {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_STMT_LIST, 2, $1, $2);}
     | {CREATE_EMPTY_VARIABLE_NODE($$);}
     ; 
-Stmt: Exp SEMICOLON {CREATE_VARIABLE_NODE(@$,$$,"Stmt", 2, $1, $2);}
-    | CompSt {CREATE_VARIABLE_NODE(@$,$$,"Stmt", 1, $1);}
-    | RETURN Exp SEMICOLON {CREATE_VARIABLE_NODE(@$,$$,"Stmt", 3, $1, $2, $3);} 
-    | IF L_BRACKET Exp R_BRACKET Stmt %prec LOWER_THAN_ELSE {CREATE_VARIABLE_NODE(@$,$$,"Stmt", 5, $1, $2, $3, $4, $5);}
-    | IF L_BRACKET Exp R_BRACKET Stmt ELSE Stmt {CREATE_VARIABLE_NODE(@$,$$,"Stmt", 7, $1, $2, $3, $4, $5, $6, $7);}
-    | WHILE L_BRACKET Exp R_BRACKET Stmt {CREATE_VARIABLE_NODE(@$,$$,"Stmt", 5, $1, $2, $3, $4, $5);}
+Stmt: Exp SEMICOLON {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_STMT, 2, $1, $2);}
+    | CompSt {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_STMT, 1, $1);}
+    | RETURN Exp SEMICOLON {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_STMT, 3, $1, $2, $3);} 
+    | IF L_BRACKET Exp R_BRACKET Stmt %prec LOWER_THAN_ELSE {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_STMT, 5, $1, $2, $3, $4, $5);}
+    | IF L_BRACKET Exp R_BRACKET Stmt ELSE Stmt {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_STMT, 7, $1, $2, $3, $4, $5, $6, $7);}
+    | WHILE L_BRACKET Exp R_BRACKET Stmt {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_STMT, 5, $1, $2, $3, $4, $5);}
     | error SEMICOLON {MARK_SYNTAX_ERROR;}
     ; 
 
-DefList: Def DefList {CREATE_VARIABLE_NODE(@$,$$,"DefList", 2, $1, $2);}
+DefList: Def DefList {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_DEF_LIST, 2, $1, $2);}
     | {CREATE_EMPTY_VARIABLE_NODE($$);}
     ; 
-Def: Specifier DecList SEMICOLON {CREATE_VARIABLE_NODE(@$,$$,"Def", 3, $1, $2, $3);}
+Def: Specifier DecList SEMICOLON {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_DEF, 3, $1, $2, $3);}
     ; 
-DecList: Dec {CREATE_VARIABLE_NODE(@$,$$,"DecList", 1, $1);}
-    | Dec COMMA DecList {CREATE_VARIABLE_NODE(@$,$$,"DecList", 3, $1, $2, $3);}
+DecList: Dec {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_DEC_LIST, 1, $1);}
+    | Dec COMMA DecList {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_DEC_LIST, 3, $1, $2, $3);}
     ; 
-Dec: VarDec {CREATE_VARIABLE_NODE(@$,$$,"Dec", 1, $1);}
-    | VarDec ASSIGN Exp {CREATE_VARIABLE_NODE(@$,$$,"Dec", 3, $1, $2, $3);}
+Dec: VarDec {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_DEC, 1, $1);}
+    | VarDec ASSIGN Exp {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_DEC, 3, $1, $2, $3);}
     ; 
 
-Exp: Exp ASSIGN Exp {CREATE_VARIABLE_NODE(@$,$$,"Exp", 3, $1, $2, $3);}
-    | Exp AND Exp {CREATE_VARIABLE_NODE(@$,$$,"Exp", 3, $1, $2, $3);}
-    | Exp OR Exp {CREATE_VARIABLE_NODE(@$,$$,"Exp", 3, $1, $2, $3);}
-    | Exp RELOP Exp {CREATE_VARIABLE_NODE(@$,$$,"Exp", 3, $1, $2, $3);}
-    | Exp ADD Exp {CREATE_VARIABLE_NODE(@$,$$,"Exp", 3, $1, $2, $3);}
-    | Exp SUB Exp {CREATE_VARIABLE_NODE(@$,$$,"Exp", 3, $1, $2, $3);}
-    | Exp MUL Exp {CREATE_VARIABLE_NODE(@$,$$,"Exp", 3, $1, $2, $3);}
-    | Exp DIV Exp {CREATE_VARIABLE_NODE(@$,$$,"Exp", 3, $1, $2, $3);}
-    | L_BRACKET Exp R_BRACKET {CREATE_VARIABLE_NODE(@$,$$,"Exp", 3, $1, $2, $3);}
-    | SUB Exp {CREATE_VARIABLE_NODE(@$,$$,"Exp", 2, $1, $2);}
-    | NOT Exp {CREATE_VARIABLE_NODE(@$,$$,"Exp", 2, $1, $2);}
-    | ID L_BRACKET R_BRACKET {CREATE_VARIABLE_NODE(@$,$$,"Exp", 3, $1, $2, $3);}
-    | Exp L_SQUARE Exp R_SQUARE {CREATE_VARIABLE_NODE(@$,$$,"Exp", 4, $1, $2, $3, $4);}
-    | Exp DOT ID {CREATE_VARIABLE_NODE(@$,$$,"Exp", 3, $1, $2, $3);}
-    | ID {CREATE_VARIABLE_NODE(@$,$$,"Exp", 1, $1);}
-    | LITERAL_INT {CREATE_VARIABLE_NODE(@$,$$,"Exp", 1, $1);}
-    | LITERAL_FP {CREATE_VARIABLE_NODE(@$,$$,"Exp", 1, $1);}
+Exp: Exp ASSIGN Exp {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_EXP, 3, $1, $2, $3);}
+    | Exp AND Exp {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_EXP, 3, $1, $2, $3);}
+    | Exp OR Exp {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_EXP, 3, $1, $2, $3);}
+    | Exp RELOP Exp {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_EXP, 3, $1, $2, $3);}
+    | Exp ADD Exp {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_EXP, 3, $1, $2, $3);}
+    | Exp SUB Exp {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_EXP, 3, $1, $2, $3);}
+    | Exp MUL Exp {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_EXP, 3, $1, $2, $3);}
+    | Exp DIV Exp {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_EXP, 3, $1, $2, $3);}
+    | L_BRACKET Exp R_BRACKET {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_EXP, 3, $1, $2, $3);}
+    | SUB Exp {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_EXP, 2, $1, $2);}
+    | NOT Exp {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_EXP, 2, $1, $2);}
+    | ID L_BRACKET R_BRACKET {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_EXP, 3, $1, $2, $3);}
+    | Exp L_SQUARE Exp R_SQUARE {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_EXP, 4, $1, $2, $3, $4);}
+    | Exp DOT ID {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_EXP, 3, $1, $2, $3);}
+    | ID {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_EXP, 1, $1);}
+    | LITERAL_INT {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_EXP, 1, $1);}
+    | LITERAL_FP {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_EXP, 1, $1);}
     ; 
 
 %%
