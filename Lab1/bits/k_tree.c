@@ -1,5 +1,7 @@
 #include "k_tree.h"
 
+static KTreeNodeFreeValueAction KTreeFreeNodeValue = NULL;
+
 static void KTreeFreeNode_(KTreeNode *node, size_t, void *)
 {
     KTreeFreeNodeValue(&node->value);

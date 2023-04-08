@@ -21,9 +21,6 @@ typedef void (*KTreeNodeFreeValueAction)(KTreeNodeValue *);
 
 #include "stack.h"
 
-static KTreeNodeFreeValueAction KTreeFreeNodeValue = NULL;
-static void KTreeFreeNode_(KTreeNode *node, size_t, void *);
-
 KTreeNode *KTreeCreateNode(KTreeNodeValue *value);
 KTreeNode *KTreeCreateNodeWithChidren(KTreeNodeValue *value, int argc, ...);
 void FreeKTree(KTreeNode *root, KTreeNodeFreeValueAction action);
