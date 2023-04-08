@@ -1,13 +1,16 @@
-#include <stdbool.h>
-#include <stdio.h>
-
+#include <cstdio>
+#include <iostream>
+#include <fstream>
+#include <string>
 #include <list>
 #include <unordered_map>
 
-#include "defs.h"
-#include "token.h"
-#include "ast_node.h"
-#include "k_tree.h"
+#include "../../Lab1/bits/defs.h"
+#include "../../Lab1/bits/token.h"
+#include "../../Lab1/bits/ast_node.h"
+#include "../../Lab1/bits/k_tree.h"
+
+#include "symbol.h"
 
 KTreeNode *kRoot = NULL;
 bool kHasLexicalError = false;
@@ -25,7 +28,7 @@ int main(int argc, char *argv[])
 {
     if (argc != 3)
     {
-        fputs("Usage: parser <input-file> <output-file>\n", stderr);
+        std::cerr<<"Usage: parser <input-file> <output-file>\n";
         return FAILURE;
     }
 
@@ -46,6 +49,8 @@ int main(int argc, char *argv[])
         FreeKTree(kRoot, FreeKTreeNode);
         return FAILURE;
     }
+
+    std::unordered_map<std::string, Symbol> symbol_table;
 
     FreeKTree(kRoot, FreeKTreeNode);
 

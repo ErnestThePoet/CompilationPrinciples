@@ -9,5 +9,6 @@
         "k_tree.h": "c",
         "ast_node.h": "c",
         "execinfo.h": "c"
-    }
+    },
+    "cmake.sourceDirectory": "${workspaceFolder}/Lab1"
 }
