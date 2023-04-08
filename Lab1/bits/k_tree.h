@@ -16,18 +16,18 @@ typedef struct KTreeNode_
     struct KTreeNode_ *r_sibling;
 } KTreeNode;
 
-typedef void (*KTreeNodeTraverseAction)(KTreeNode *, size_t);
+typedef void (*KTreeNodeTraverseAction)(KTreeNode *, size_t, void *);
 typedef void (*KTreeNodeFreeValueAction)(KTreeNodeValue *);
 
 #include "stack.h"
 
 static KTreeNodeFreeValueAction KTreeFreeNodeValue = NULL;
-static void KTreeFreeNode_(KTreeNode *node, size_t);
+static void KTreeFreeNode_(KTreeNode *node, size_t, void *);
 
 KTreeNode *KTreeCreateNode(KTreeNodeValue *value);
 KTreeNode *KTreeCreateNodeWithChidren(KTreeNodeValue *value, int argc, ...);
 void FreeKTree(KTreeNode *root, KTreeNodeFreeValueAction action);
 void KTreeAddChildRight(KTreeNode *root, KTreeNode *child);
-void KTreePreOrderTraverse(KTreeNode *root, KTreeNodeTraverseAction action);
+void KTreePreOrderTraverse(KTreeNode *root, KTreeNodeTraverseAction action, void *user_arg);
 
 #endif

@@ -1,6 +1,6 @@
 #include "k_tree.h"
 
-static void KTreeFreeNode_(KTreeNode *node, size_t)
+static void KTreeFreeNode_(KTreeNode *node, size_t, void *)
 {
     KTreeFreeNodeValue(&node->value);
 }
@@ -32,7 +32,8 @@ KTreeNode *KTreeCreateNodeWithChidren(KTreeNodeValue *value, int argc, ...)
     {
         KTreeNode *current_child = va_arg(children, KTreeNode *);
         // Avoid epsilon patterns
-        if(current_child!=NULL){
+        if (current_child != NULL)
+        {
             KTreeAddChildRight(root, current_child);
         }
     }
@@ -45,7 +46,7 @@ KTreeNode *KTreeCreateNodeWithChidren(KTreeNodeValue *value, int argc, ...)
 void FreeKTree(KTreeNode *root, KTreeNodeFreeValueAction action)
 {
     KTreeFreeNodeValue = action;
-    KTreePreOrderTraverse(root, KTreeFreeNode_);
+    KTreePreOrderTraverse(root, KTreeFreeNode_, NULL);
 }
 
 void KTreeAddChildRight(KTreeNode *root, KTreeNode *child)
@@ -68,7 +69,7 @@ void KTreeAddChildRight(KTreeNode *root, KTreeNode *child)
     }
 }
 
-void KTreePreOrderTraverse(KTreeNode *root, KTreeNodeTraverseAction action)
+void KTreePreOrderTraverse(KTreeNode *root, KTreeNodeTraverseAction action, void *user_arg)
 {
     Stack *stack = StackCreate();
 
@@ -80,7 +81,7 @@ void KTreePreOrderTraverse(KTreeNode *root, KTreeNodeTraverseAction action)
     {
         if (current_node != NULL)
         {
-            action(current_node, current_level);
+            action(current_node, current_level, user_arg);
             StackPush(stack, &current_node);
             current_node = current_node->l_child;
             current_level++;

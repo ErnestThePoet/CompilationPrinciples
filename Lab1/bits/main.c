@@ -17,7 +17,7 @@ void FreeKTreeNode(KTreeNodeValue *node)
     AstNodeFree(*node);
 }
 
-void PrintAstNode(KTreeNode *node, size_t current_level)
+void PrintAstNode(KTreeNode *node, size_t current_level, void *)
 {
     for (int i = 0; i < current_level; i++)
     {
@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
 
     if (!kHasLexicalError && !kHasSyntaxError)
     {
-        KTreePreOrderTraverse(kRoot, PrintAstNode);
+        KTreePreOrderTraverse(kRoot, PrintAstNode, NULL);
     }
 
     FreeKTree(kRoot, FreeKTreeNode);
