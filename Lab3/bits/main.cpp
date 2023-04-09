@@ -3,14 +3,13 @@
 #include <fstream>
 #include <string>
 #include <list>
-#include <unordered_map>
 
 #include "../../Lab1/bits/defs.h"
 #include "../../Lab1/bits/token.h"
 #include "../../Lab1/bits/ast_node.h"
 #include "../../Lab1/bits/k_tree.h"
 
-#include "symbol.h"
+#include "./symbols/symbol.h"
 
 KTreeNode *kRoot = NULL;
 bool kHasLexicalError = false;
@@ -50,7 +49,7 @@ int main(int argc, char *argv[])
         return FAILURE;
     }
 
-    std::unordered_map<std::string, Symbol> symbol_table;
+    SymbolTable symbol_table;
 
     FreeKTree(kRoot, FreeKTreeNode);
 

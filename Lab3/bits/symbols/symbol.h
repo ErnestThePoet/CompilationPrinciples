@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <memory>
 
 #include "symbol_type.h"
 
@@ -24,3 +25,5 @@ public:
         return type;
     }
 };
+
+using SymbolSharedPtr = std::shared_ptr<Symbol>;
