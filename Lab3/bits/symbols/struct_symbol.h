@@ -7,16 +7,16 @@
 class StructSymbol : public Symbol
 {
 private:
-    std::string struct_name;
+    std::string struct_name_;
 
 public:
     StructSymbol(
         const std::string &name,
         const std::string &struct_name) : Symbol(name, SymbolType::STRUCT),
-                                          struct_name(struct_name) {}
+                                          struct_name_(struct_name) {}
 
     std::string StructName() const
     {
-        return struct_name;
+        return struct_name_;
     }
 };

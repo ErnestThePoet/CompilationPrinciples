@@ -4,24 +4,24 @@
 
 #include "symbol.h"
 
-class StructSymbolDef : public Symbol
+class StructDefSymbol : public Symbol
 {
 private:
-    std::vector<SymbolSharedPtr> fields;
+    std::vector<SymbolSharedPtr> fields_;
 
 public:
-    StructSymbolDef(
+    StructDefSymbol(
         const std::string &name,
         const std::vector<SymbolSharedPtr> &fields) : Symbol(name, SymbolType::STRUCT_DEF),
-                                                      fields(fields) {}
+                                                      fields_(fields) {}
 
     SymbolSharedPtr FieldAt(int index) const
     {
-        return fields[index];
+        return fields_[index];
     }
 
     std::vector<SymbolSharedPtr> Fields() const
     {
-        return fields;
+        return fields_;
     }
 };

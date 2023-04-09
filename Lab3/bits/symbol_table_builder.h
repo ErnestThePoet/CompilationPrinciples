@@ -13,17 +13,21 @@
 #include "./symbols/array_symbol.h"
 #include "./symbols/function_symbol.h"
 #include "./symbols/struct_symbol.h"
-#include "./symbols/struct_symbol_def.h"
+#include "./symbols/struct_def_symbol.h"
 
 using SymbolTable = std::unordered_map<std::string, SymbolSharedPtr>;
 
 class SymbolTableBuilder
 {
-public:
-    void Build(KTreeNode *node, size_t, void *user_arg);
+private:
+    SymbolTable *symbol_table_;
 
-    private:
-        void DoExtDefList(KTreeNode *node, SymbolTable &symbol_table);
-        SymbolSharedPtr DoExtDef(KTreeNode *node);
-        SymbolSharedPtr DoVarDec(KTreeNode *node);
+public:
+    SymbolTableBuilder(SymbolTable &symbol_table) : symbol_table_(&symbol_table) {}
+    void Build(KTreeNode *node, size_t, void *);
+
+private:
+    void DoExtDefList(KTreeNode *node);
+    SymbolSharedPtr DoExtDef(KTreeNode *node);
+    SymbolSharedPtr DoVarDec(KTreeNode *node);
 };

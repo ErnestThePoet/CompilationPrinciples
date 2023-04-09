@@ -7,16 +7,21 @@
 class FunctionSymbol : public Symbol
 {
 private:
-    std::vector<SymbolSharedPtr> args;
+    std::vector<SymbolSharedPtr> args_;
 
 public:
     FunctionSymbol(
         const std::string &name,
-        const std::vector<SymbolSharedPtr> &argsargs) : Symbol(name, SymbolType::FUNCTION),
-                                                        args(args) {}
+        const std::vector<SymbolSharedPtr> &args) : Symbol(name, SymbolType::FUNCTION),
+                                                        args_(args) {}
 
     SymbolSharedPtr ArgAt(int index) const
     {
-        return args[index];
+        return args_[index];
+    }
+
+    std::vector<SymbolSharedPtr> Args() const
+    {
+        return args_;
     }
 };

@@ -8,21 +8,21 @@
 class Symbol
 {
 private:
-    std::string name;
-    SymbolType type;
+    std::string name_;
+    SymbolType type_;
 
 public:
     Symbol(const std::string &name,
-           const SymbolType type) : name(name), type(type) {}
+           const SymbolType type) : name_(name), type_(type) {}
 
     std::string Name() const
     {
-        return name;
+        return name_;
     }
 
     SymbolType Type() const
     {
-        return type;
+        return type_;
     }
 };
 
