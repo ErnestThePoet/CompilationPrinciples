@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
         return FAILURE;
     }
 
-    SymbolTable symbol_table;
+    
 
     FreeKTree(kRoot, FreeKTreeNode);
 

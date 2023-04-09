@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(CPLab3)
+project(CPLab2)
 aux_source_directory(./bits/ BITS_SRCS)
 aux_source_directory(./generated/ GENERAETD_SRCS)
 
