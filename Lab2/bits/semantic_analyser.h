@@ -24,6 +24,7 @@ using SymbolTable = std::unordered_map<std::string, SymbolSharedPtr>;
 class SemanticAnalyser
 {
 private:
+    bool has_semantic_error_;
     SymbolTable symbol_table_;
     std::random_device random_device_;
     std::mt19937 mt19937_;
@@ -31,7 +32,7 @@ private:
 
     static constexpr int kErrorUndefinedVariable = 1;
     static constexpr int kErrorUndefinedFunction = 2;
-    static constexpr int kErrorDuplicateVariableName = 3;
+    static constexpr int kErrorDuplicateVariableName = 3; // ExtDef impled
     static constexpr int kErrorDuplicateFunctionName = 4;
     static constexpr int kErrorAssignTypeMismatch = 5; // Dec impled
     static constexpr int kErrorAssignToRValue = 6;
@@ -49,10 +50,15 @@ private:
     static constexpr int kErrorUndefinedStruct = 17;          // Impled
 
 public:
-    SemanticAnalyser() : mt19937_(random_device_()) {}
+    SemanticAnalyser() : has_semantic_error_(false), mt19937_(random_device_()) {}
     void Build(KTreeNode *node, size_t, void *);
 
-    SymbolTable SymbolTable()
+    bool HasSemanticError() const
+    {
+        return has_semantic_error_;
+    }
+
+    SymbolTable SymbolTable() const
     {
         return symbol_table_;
     }
@@ -62,7 +68,7 @@ private:
     std::string GetSymbolTypeName(const SymbolSharedPtr &symbol) const;
     std::string GetSymbolTypeName(const Symbol *symbol) const;
     void PrintError(
-        const int type, const int line_number, const std::string &message) const;
+        const int type, const int line_number, const std::string &message);
     std::string GetNewAnnoyStructName();
 
     bool CheckAssignmentTypeCompatibility(
@@ -75,9 +81,13 @@ private:
 
     // Please combine the actual syntax in .y file to fully understand each method
     // Contract: Functions that return a single ptr may return nullptr.
-    //           Functions that return a vector of ptr will have no nullptr in that vector.
+    //           Functions that return a vector of ptr will ensure no nullptr is in that vector.
     void DoExtDefList(KTreeNode *node);
     void DoExtDef(KTreeNode *node);
+    std::vector<VariableSymbolSharedPtr> DoDecListDefCommon(
+        const VariableSymbolSharedPtr& specifier,
+        const std::vector<VariableSymbolSharedPtr>& dec_list);
+    std::vector<VariableSymbolSharedPtr> DoExtDecList(KTreeNode *node);
     VariableSymbolSharedPtr DoSpecifier(KTreeNode *node);
     std::shared_ptr<StructSymbol> DoStructSpecifier(KTreeNode *node);
     std::vector<VariableSymbolSharedPtr> DoDefList(KTreeNode *node);

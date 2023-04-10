@@ -75,8 +75,9 @@ std::string SemanticAnalyser::GetSymbolTypeName(const Symbol *symbol) const
 }
 
 void SemanticAnalyser::PrintError(
-    const int type, const int line_number, const std::string &message) const
+    const int type, const int line_number, const std::string &message)
 {
+    has_semantic_error_ = true;
     std::cerr << "Error type " << type << " at Line " << line_number << ": " << message << std::endl;
 }
 
@@ -189,159 +190,52 @@ void SemanticAnalyser::DoExtDefList(KTreeNode *node)
     }
 }
 
+// [CHECKS] kErrorDuplicateVariableName,
+//          kErrorDuplicateFunctionName
 void SemanticAnalyser::DoExtDef(KTreeNode *node)
 {
+    // ExtDef: Specifier SEMICOLON
+    if (node->l_child->r_sibling->value->is_token)
+    {
+        return;
+    }
+
     auto specifier = DoSpecifier(node->l_child);
-}
 
-// Return value is used to provide type info
-// Returns either an ArithmeticSymbol or a StructSymbol
-VariableSymbolSharedPtr SemanticAnalyser::DoSpecifier(KTreeNode *node)
-{
-    // Specifier: TYPE_INT | TYPE_FLOAT
-    if (node->l_child->value->is_token)
+    // ExtDef: Specifier ExtDecList SEMICOLON
+    if (node->l_child->r_sibling->value->ast_node_value.variable->type == VARIABLE_EXT_DEC_LIST)
     {
-        return std::make_shared<ArithmeticSymbol>(
-            GetLineNumber(node->l_child),
-            "",
-            node->l_child->value->ast_node_value.token->type == TOKEN_KEYWORD_TYPE_INT
-                ? ArithmeticSymbolType::INT
-                : ArithmeticSymbolType::FLOAT);
-    }
-    // Specifier: StructSpecifier
-    else
-    {
-        return DoStructSpecifier(node->l_child);
-    }
-}
+        auto dec_list = DoExtDecList(node->l_child->r_sibling);
 
-// [INSERTS] StructDefSymbol
-// [CHECKS] kErrorDuplicateStructName,
-//          kErrorDuplicateStructFieldName,
-//          kErrorStructFieldInitialized
-// For named struct def, check the existence of the def,
-// add the def to symtable and return a StructSymbol.
-// For unnamed struct def, create a new random name for it,
-// add the def to symtable and return a StructSymbol.
-// For named struct, check the existence of the def and
-// return a StructSymbol.
-std::shared_ptr<StructSymbol> SemanticAnalyser::DoStructSpecifier(KTreeNode *node)
-{
-    std::string struct_name;
+        auto defs = DoDecListDefCommon(specifier, dec_list);
 
-    // StructSpecifier: STRUCT Tag
-    if (!node->l_child->r_sibling->value->is_token &&
-        node->l_child->r_sibling->value->ast_node_value.variable->type == VARIABLE_TAG)
-    {
-        KTreeNode *struct_id_node = node->l_child->r_sibling->l_child;
-        struct_name =
-            struct_id_node->value->ast_node_value.token->value;
-        if (symbol_table_.contains(struct_name) &&
-            symbol_table_[struct_name]->SymbolType() == SymbolType::STRUCT_DEF)
+        for (auto &def : defs)
         {
-            return std::make_shared<StructSymbol>(
-                GetLineNumber(struct_id_node), "", struct_name);
-        }
-
-        PrintError(kErrorUndefinedStruct,
-                   GetLineNumber(struct_id_node),
-                   "Struct '" + struct_name + "' is not defined");
-        return nullptr;
-    }
-    // StructSpecifier: STRUCT OptTag L_BRACE DefList R_BRACE
-    else
-    {
-        KTreeNode *def_list_node = nullptr;
-        // Unnamed struct def
-        // StructSpecifier: STRUCT L_BRACE DefList R_BRACE
-        if (node->l_child->r_sibling->value->is_token)
-        {
-            struct_name = GetNewAnnoyStructName();
-            def_list_node = node->l_child->r_sibling->r_sibling;
-        }
-        // Named struct def
-        // StructSpecifier: STRUCT OptTag L_BRACE DefList R_BRACE
-        else
-        {
-            struct_name = node->l_child->r_sibling->l_child->value->ast_node_value.token->value;
-            def_list_node = node->l_child->r_sibling->r_sibling->r_sibling;
-
-            if (symbol_table_.contains(struct_name))
+            if (symbol_table_.contains(def->Name()))
             {
-                PrintError(kErrorDuplicateStructName,
-                           node->l_child->r_sibling->l_child->value->ast_node_value.token->line_start,
-                           "Duplicate struct name '" + struct_name + '\'');
-                return nullptr;
-            }
-        }
-
-        std::vector<VariableSymbolSharedPtr> fields;
-
-        if (!def_list_node->value->is_token)
-        {
-            fields = DoDefList(def_list_node);
-        }
-
-        // Checks kErrorDuplicateStructFieldName
-        std::unordered_set<std::string> field_names;
-        for (auto &field : fields)
-        {
-            if (field_names.contains(field->Name()))
-            {
-                PrintError(kErrorDuplicateStructFieldName,
-                           field->LineNumber(),
-                           "Duplicate field '" + field->Name() + "'");
-                return nullptr;
+                PrintError(kErrorDuplicateVariableName,
+                           def->LineNumber(),
+                           "Duplicate variable name: '" + def->Name() + '\'');
             }
             else
             {
-                field_names.insert(field->Name());
+                symbol_table_[def->Name()] = def;
             }
         }
-
-        // Checks kErrorStructFieldInitialized
-        for (auto &field : fields)
-        {
-            if (field->IsInitialized())
-            {
-                PrintError(kErrorStructFieldInitialized,
-                           field->LineNumber(),
-                           "Struct field '" + field->Name() + "' is initialized");
-
-                return nullptr;
-            }
-        }
-
-        symbol_table_[struct_name] = std::make_shared<StructDefSymbol>(
-            GetLineNumber(node->l_child), struct_name, fields);
-
-        return std::make_shared<StructSymbol>(GetLineNumber(node->l_child), "", struct_name);
     }
-}
-
-std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDefList(KTreeNode *node)
-{
-    // DefList: Def DefList
-    std::vector<VariableSymbolSharedPtr> defs;
-    while (node != NULL)
+    // ExtDef: Specifier FunDec CompSt
+    else
     {
-        auto current_defs = DoDef(node->l_child);
-        defs.insert(defs.cend(), current_defs.begin(), current_defs.end());
-        node = node->l_child->r_sibling;
     }
-
-    return defs;
 }
 
-// [COMBINATION POINT]
+// [COMBINATION] Combines specifier and dec_list
 // [CHECKS] kErrorAssignTypeMismatch,
 //          kErrorUndefinedStruct
-std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDef(KTreeNode *node)
+std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDecListDefCommon(
+    const VariableSymbolSharedPtr &specifier,
+    const std::vector<VariableSymbolSharedPtr> &dec_list)
 {
-    // Def: Specifier DecList SEMICOLON
-    auto specifier = DoSpecifier(node->l_child);
-    auto dec_list = DoDecList(node->l_child->r_sibling);
-
     std::vector<VariableSymbolSharedPtr> defs;
 
     for (auto &dec : dec_list)
@@ -461,6 +355,172 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDef(KTreeNode *node)
     return defs;
 }
 
+std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoExtDecList(KTreeNode *node)
+{
+    // DecList: Dec | Dec COMMA DecList
+    std::vector<VariableSymbolSharedPtr> decs;
+
+    while (node->l_child->r_sibling != NULL)
+    {
+        auto dec = DoVarDec(node->l_child);
+        if (dec != nullptr)
+        {
+            decs.push_back(dec);
+        }
+        node = node->l_child->r_sibling->r_sibling;
+    }
+
+    return decs;
+}
+
+// Return value is used to provide type info
+// Returns either an ArithmeticSymbol or a StructSymbol
+VariableSymbolSharedPtr SemanticAnalyser::DoSpecifier(KTreeNode *node)
+{
+    // Specifier: TYPE_INT | TYPE_FLOAT
+    if (node->l_child->value->is_token)
+    {
+        return std::make_shared<ArithmeticSymbol>(
+            GetLineNumber(node->l_child),
+            "",
+            node->l_child->value->ast_node_value.token->type == TOKEN_KEYWORD_TYPE_INT
+                ? ArithmeticSymbolType::INT
+                : ArithmeticSymbolType::FLOAT);
+    }
+    // Specifier: StructSpecifier
+    else
+    {
+        return DoStructSpecifier(node->l_child);
+    }
+}
+
+// [INSERTS] StructDefSymbol
+// [CHECKS] kErrorDuplicateStructName,
+//          kErrorDuplicateStructFieldName,
+//          kErrorStructFieldInitialized
+// For named struct def, check the existence of the def,
+// add the def to symtable and return a StructSymbol.
+// For unnamed struct def, create a new random name for it,
+// add the def to symtable and return a StructSymbol.
+// For named struct, check the existence of the def and
+// return a StructSymbol.
+std::shared_ptr<StructSymbol> SemanticAnalyser::DoStructSpecifier(KTreeNode *node)
+{
+    std::string struct_name;
+
+    // StructSpecifier: STRUCT Tag
+    if (!node->l_child->r_sibling->value->is_token &&
+        node->l_child->r_sibling->value->ast_node_value.variable->type == VARIABLE_TAG)
+    {
+        KTreeNode *struct_id_node = node->l_child->r_sibling->l_child;
+        struct_name =
+            struct_id_node->value->ast_node_value.token->value;
+        if (symbol_table_.contains(struct_name) &&
+            symbol_table_[struct_name]->SymbolType() == SymbolType::STRUCT_DEF)
+        {
+            return std::make_shared<StructSymbol>(
+                GetLineNumber(struct_id_node), "", struct_name);
+        }
+
+        PrintError(kErrorUndefinedStruct,
+                   GetLineNumber(struct_id_node),
+                   "Struct '" + struct_name + "' is not defined");
+        return nullptr;
+    }
+    // StructSpecifier: STRUCT OptTag L_BRACE DefList R_BRACE
+    else
+    {
+        KTreeNode *def_list_node = nullptr;
+        // Unnamed struct def
+        // StructSpecifier: STRUCT L_BRACE DefList R_BRACE
+        if (node->l_child->r_sibling->value->is_token)
+        {
+            struct_name = GetNewAnnoyStructName();
+            def_list_node = node->l_child->r_sibling->r_sibling;
+        }
+        // Named struct def
+        // StructSpecifier: STRUCT OptTag L_BRACE DefList R_BRACE
+        else
+        {
+            struct_name = node->l_child->r_sibling->l_child->value->ast_node_value.token->value;
+            def_list_node = node->l_child->r_sibling->r_sibling->r_sibling;
+
+            if (symbol_table_.contains(struct_name))
+            {
+                PrintError(kErrorDuplicateStructName,
+                           GetLineNumber(node->l_child->r_sibling->l_child),
+                           "Duplicate struct name '" + struct_name + '\'');
+                return nullptr;
+            }
+        }
+
+        std::vector<VariableSymbolSharedPtr> fields;
+
+        if (!def_list_node->value->is_token)
+        {
+            fields = DoDefList(def_list_node);
+        }
+
+        // Checks kErrorDuplicateStructFieldName
+        std::unordered_set<std::string> field_names;
+        for (auto &field : fields)
+        {
+            if (field_names.contains(field->Name()))
+            {
+                PrintError(kErrorDuplicateStructFieldName,
+                           field->LineNumber(),
+                           "Duplicate field '" + field->Name() + "'");
+                return nullptr;
+            }
+            else
+            {
+                field_names.insert(field->Name());
+            }
+        }
+
+        // Checks kErrorStructFieldInitialized
+        for (auto &field : fields)
+        {
+            if (field->IsInitialized())
+            {
+                PrintError(kErrorStructFieldInitialized,
+                           field->LineNumber(),
+                           "Struct field '" + field->Name() + "' is initialized");
+
+                return nullptr;
+            }
+        }
+
+        symbol_table_[struct_name] = std::make_shared<StructDefSymbol>(
+            GetLineNumber(node->l_child), struct_name, fields);
+
+        return std::make_shared<StructSymbol>(GetLineNumber(node->l_child), "", struct_name);
+    }
+}
+
+std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDefList(KTreeNode *node)
+{
+    // DefList: Def DefList
+    std::vector<VariableSymbolSharedPtr> defs;
+    while (node != NULL)
+    {
+        auto current_defs = DoDef(node->l_child);
+        defs.insert(defs.cend(), current_defs.begin(), current_defs.end());
+        node = node->l_child->r_sibling;
+    }
+
+    return defs;
+}
+
+std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDef(KTreeNode *node)
+{
+    // Def: Specifier DecList SEMICOLON
+    auto specifier = DoSpecifier(node->l_child);
+    auto dec_list = DoDecList(node->l_child->r_sibling);
+
+    return DoDecListDefCommon(specifier, dec_list);
+}
+
 std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDecList(KTreeNode *node)
 {
     // DecList: Dec | Dec COMMA DecList
@@ -493,12 +553,15 @@ VariableSymbolSharedPtr SemanticAnalyser::DoDec(KTreeNode *node)
         return var_dec;
     }
 
+    auto initial_value = DoExp(node->l_child->r_sibling->r_sibling);
+
+    // When initial value is erroneous, just report the variable as uninitialized
     return std::make_shared<VariableSymbol>(
         var_dec->LineNumber(),
         var_dec->Name(),
         var_dec->VariableSymbolType(),
-        true,
-        DoExp(node->l_child->r_sibling->r_sibling));
+        initial_value != nullptr,
+        initial_value);
 }
 
 // Returns either an UNKNOWN VariableSymbol containing name
