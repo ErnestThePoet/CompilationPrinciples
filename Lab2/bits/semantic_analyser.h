@@ -4,13 +4,15 @@
 #include <sstream>
 #include <string>
 #include <unordered_map>
-#include <tuple>
+#include <unordered_set>
+#include <vector>
 #include <utility>
 #include <random>
 #include "../../Lab1/bits/k_tree.h"
 #include "../../Lab1/bits/token.h"
 #include "../../Lab1/bits/variable.h"
 #include "./symbols/symbol.h"
+#include "./symbols/variable_symbol.h"
 #include "./symbols/arithmetic_symbol.h"
 #include "./symbols/array_symbol.h"
 #include "./symbols/function_symbol.h"
@@ -56,16 +58,32 @@ public:
     }
 
 private:
+    int GetLineNumber(const KTreeNode *node) const;
+    std::string GetSymbolTypeName(const SymbolSharedPtr &symbol) const;
+    std::string GetSymbolTypeName(const Symbol *symbol) const;
     void PrintError(
-        const int type, const KTreeNode *node, const std::string &message) const;
+        const int type, const int line_number, const std::string &message) const;
     std::string GetNewAnnoyStructName();
+
+    bool CheckAssignmentTypeCompatibility(
+        const VariableSymbol &var1,
+        const VariableSymbol &var2) const;
+
+    bool CheckStructAssignmentTypeCompatibility(
+        const StructDefSymbol &def1,
+        const StructDefSymbol &def2) const;
+
+    // Please combine the actual syntax in .y file to fully understand each method
+    // Contract: Functions that return a single ptr may return nullptr.
+    //           Functions that return a vector of ptr will have no nullptr in that vector.
     void DoExtDefList(KTreeNode *node);
     void DoExtDef(KTreeNode *node);
-    SymbolSharedPtr DoSpecifier(KTreeNode *node);
-    SymbolSharedPtr DoStructSpecifier(KTreeNode *node);
-    std::vector<SymbolSharedPtr> DoDefList(KTreeNode *node);
-    std::vector<SymbolSharedPtr> DoDef(KTreeNode *node);
-    std::vector<SymbolSharedPtr> DoDecList(KTreeNode *node);
-    SymbolSharedPtr DoDec(KTreeNode *node);
-    SymbolSharedPtr DoVarDec(KTreeNode *node);
+    VariableSymbolSharedPtr DoSpecifier(KTreeNode *node);
+    std::shared_ptr<StructSymbol> DoStructSpecifier(KTreeNode *node);
+    std::vector<VariableSymbolSharedPtr> DoDefList(KTreeNode *node);
+    std::vector<VariableSymbolSharedPtr> DoDef(KTreeNode *node);
+    std::vector<VariableSymbolSharedPtr> DoDecList(KTreeNode *node);
+    VariableSymbolSharedPtr DoDec(KTreeNode *node);
+    VariableSymbolSharedPtr DoVarDec(KTreeNode *node);
+    VariableSymbolSharedPtr DoExp(KTreeNode *node);
 };

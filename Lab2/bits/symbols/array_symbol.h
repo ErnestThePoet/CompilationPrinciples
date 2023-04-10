@@ -1,23 +1,32 @@
 #pragma once
 
-#include "symbol.h"
+#include "variable_symbol.h"
 
-class ArraySymbol : public Symbol
+class ArraySymbol : public VariableSymbol
 {
 private:
-    SymbolSharedPtr elem_type_;
+    VariableSymbolSharedPtr elem_type_;
     size_t size_;
 
 public:
-    ArraySymbol(const std::string &name,
-                const SymbolSharedPtr &elem_type,
-                const size_t size) : Symbol(name, SymbolType::ARRAY),
-                                     elem_type_(elem_type),
-                                     size_(size) {}
+    ArraySymbol(const int line_number,
+                const std::string &name,
+                const VariableSymbolSharedPtr &elem_type,
+                const size_t size,
+                const bool is_initialized = false,
+                const VariableSymbolSharedPtr &initial_value = nullptr)
+        : VariableSymbol(line_number, name, VariableSymbolType::ARRAY, is_initialized, initial_value),
+          elem_type_(elem_type),
+          size_(size) {}
 
-    SymbolSharedPtr ElemType() const
+    VariableSymbolSharedPtr ElemType() const
     {
         return elem_type_;
+    }
+
+    void SetElemType(const VariableSymbolSharedPtr &elem_type)
+    {
+        elem_type_ = elem_type;
     }
 
     size_t Size() const

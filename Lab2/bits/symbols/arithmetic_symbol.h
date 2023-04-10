@@ -1,20 +1,24 @@
 #pragma once
 
-#include "symbol.h"
+#include "variable_symbol.h"
 
-class ArithmeticSymbol : public Symbol
+class ArithmeticSymbol : public VariableSymbol
 {
 private:
-    ArithmeticSymbolType arithmetic_type_;
+    ArithmeticSymbolType arithmetic_symbol_type_;
 
 public:
     ArithmeticSymbol(
+        const int line_number,
         const std::string &name,
-        const ArithmeticSymbolType arithmetic_type) : Symbol(name, SymbolType::ARITHMETIC),
-                                                      arithmetic_type_(arithmetic_type) {}
+        const ArithmeticSymbolType arithmetic_symbol_type,
+        const bool is_initialized = false,
+        const VariableSymbolSharedPtr &initial_value = nullptr)
+        : VariableSymbol(line_number, name, VariableSymbolType::ARITHMETIC, is_initialized, initial_value),
+          arithmetic_symbol_type_(arithmetic_symbol_type) {}
 
-    ArithmeticSymbolType ArithmeticType() const
+    ArithmeticSymbolType ArithmeticSymbolType() const
     {
-        return arithmetic_type_;
+        return arithmetic_symbol_type_;
     }
 };

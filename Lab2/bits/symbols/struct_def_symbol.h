@@ -3,24 +3,27 @@
 #include <vector>
 
 #include "symbol.h"
+#include "variable_symbol.h"
 
 class StructDefSymbol : public Symbol
 {
 private:
-    std::vector<SymbolSharedPtr> fields_;
+    std::vector<VariableSymbolSharedPtr> fields_;
 
 public:
     StructDefSymbol(
+        const int line_number,
         const std::string &name,
-        const std::vector<SymbolSharedPtr> &fields) : Symbol(name, SymbolType::STRUCT_DEF),
-                                                      fields_(fields) {}
+        const std::vector<VariableSymbolSharedPtr> &fields)
+        : Symbol(line_number, name, SymbolType::STRUCT_DEF),
+          fields_(fields) {}
 
-    SymbolSharedPtr FieldAt(int index) const
+    VariableSymbolSharedPtr FieldAt(int index) const
     {
         return fields_[index];
     }
 
-    std::vector<SymbolSharedPtr> Fields() const
+    std::vector<VariableSymbolSharedPtr> Fields() const
     {
         return fields_;
     }

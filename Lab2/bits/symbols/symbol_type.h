@@ -3,9 +3,15 @@
 enum class SymbolType
 {
     UNKNOWN,
+    VARIABLE,
+    STRUCT_DEF,
+};
+
+enum class VariableSymbolType
+{
+    UNKNOWN,
     ARITHMETIC,
     ARRAY,
-    STRUCT_DEF,
     STRUCT,
     FUNCTION
 };
