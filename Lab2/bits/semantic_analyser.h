@@ -33,7 +33,7 @@ private:
     static constexpr int kErrorUndefinedFunction = 2;
     static constexpr int kErrorDuplicateVariableName = 3;
     static constexpr int kErrorDuplicateFunctionName = 4;
-    static constexpr int kErrorAssignTypeMismatch = 5;
+    static constexpr int kErrorAssignTypeMismatch = 5; // Dec impled
     static constexpr int kErrorAssignToRValue = 6;
     static constexpr int kErrorOperandTypeMismatch = 7;
     static constexpr int kErrorReturnTypeMismatch = 8;
@@ -43,10 +43,10 @@ private:
     static constexpr int kErrorIndexNotInteger = 12;
     static constexpr int kErrorInvalidDotOperator = 13;
     static constexpr int kErrorUndefinedStructField = 14;
-    static constexpr int kErrorDuplicateStructFieldName = 15;
-    static constexpr int kErrorStructFieldInitialized = 15;
-    static constexpr int kErrorDuplicateStructName = 16;
-    static constexpr int kErrorUndefinedStruct = 17;
+    static constexpr int kErrorDuplicateStructFieldName = 15; // Impled
+    static constexpr int kErrorStructFieldInitialized = 15;   // Impled
+    static constexpr int kErrorDuplicateStructName = 16;      // Impled
+    static constexpr int kErrorUndefinedStruct = 17;          // Impled
 
 public:
     SemanticAnalyser() : mt19937_(random_device_()) {}

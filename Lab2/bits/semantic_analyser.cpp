@@ -216,7 +216,9 @@ VariableSymbolSharedPtr SemanticAnalyser::DoSpecifier(KTreeNode *node)
 }
 
 // [INSERTS] StructDefSymbol
-// [CHECKS] kErrorAssignTypeMismatch
+// [CHECKS] kErrorDuplicateStructName,
+//          kErrorDuplicateStructFieldName,
+//          kErrorStructFieldInitialized
 // For named struct def, check the existence of the def,
 // add the def to symtable and return a StructSymbol.
 // For unnamed struct def, create a new random name for it,
@@ -251,16 +253,26 @@ std::shared_ptr<StructSymbol> SemanticAnalyser::DoStructSpecifier(KTreeNode *nod
     {
         KTreeNode *def_list_node = nullptr;
         // Unnamed struct def
+        // StructSpecifier: STRUCT L_BRACE DefList R_BRACE
         if (node->l_child->r_sibling->value->is_token)
         {
             struct_name = GetNewAnnoyStructName();
             def_list_node = node->l_child->r_sibling->r_sibling;
         }
         // Named struct def
+        // StructSpecifier: STRUCT OptTag L_BRACE DefList R_BRACE
         else
         {
             struct_name = node->l_child->r_sibling->l_child->value->ast_node_value.token->value;
             def_list_node = node->l_child->r_sibling->r_sibling->r_sibling;
+
+            if (symbol_table_.contains(struct_name))
+            {
+                PrintError(kErrorDuplicateStructName,
+                           node->l_child->r_sibling->l_child->value->ast_node_value.token->line_start,
+                           "Duplicate struct name '" + struct_name + '\'');
+                return nullptr;
+            }
         }
 
         std::vector<VariableSymbolSharedPtr> fields;
@@ -279,6 +291,23 @@ std::shared_ptr<StructSymbol> SemanticAnalyser::DoStructSpecifier(KTreeNode *nod
                 PrintError(kErrorDuplicateStructFieldName,
                            field->LineNumber(),
                            "Duplicate field '" + field->Name() + "'");
+                return nullptr;
+            }
+            else
+            {
+                field_names.insert(field->Name());
+            }
+        }
+
+        // Checks kErrorStructFieldInitialized
+        for (auto &field : fields)
+        {
+            if (field->IsInitialized())
+            {
+                PrintError(kErrorStructFieldInitialized,
+                           field->LineNumber(),
+                           "Struct field '" + field->Name() + "' is initialized");
+
                 return nullptr;
             }
         }
@@ -317,11 +346,6 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDef(KTreeNode *node)
 
     for (auto &dec : dec_list)
     {
-        if (dec == nullptr)
-        {
-            continue;
-        }
-
         if (dec->VariableSymbolType() == VariableSymbolType::UNKNOWN)
         {
             // Arithmetic
@@ -444,7 +468,11 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDecList(KTreeNode *node
 
     while (node->l_child->r_sibling != NULL)
     {
-        decs.push_back(DoDec(node->l_child));
+        auto dec = DoDec(node->l_child);
+        if (dec != nullptr)
+        {
+            decs.push_back(dec);
+        }
         node = node->l_child->r_sibling->r_sibling;
     }
 
