@@ -8,7 +8,7 @@ void SemanticAnalyser::Analyse(KTreeNode *node, size_t, void *)
     }
 }
 
-int SemanticAnalyser::GetLineNumber(const KTreeNode *node) const
+int SemanticAnalyser::GetKTreeNodeLineNumber(const KTreeNode *node) const
 {
     return node->value->is_token
                ? node->value->ast_node_value.token->line_start
@@ -89,27 +89,27 @@ std::string SemanticAnalyser::GetNewAnnoyStructName()
 }
 
 bool SemanticAnalyser::CheckAssignmentTypeCompatibility(
-    const VariableSymbol &var1,
-    const VariableSymbol &var2) const
+    const VariableSymbol &var_l,
+    const VariableSymbol &var_r) const
 {
-    if (var1.VariableSymbolType() != var2.VariableSymbolType())
+    if (var_l.VariableSymbolType() != var_r.VariableSymbolType())
     {
         return false;
     }
 
-    switch (var1.VariableSymbolType())
+    switch (var_l.VariableSymbolType())
     {
     case VariableSymbolType::ARITHMETIC:
     {
-        const ArithmeticSymbol *arithmetic1 = static_cast<const ArithmeticSymbol *>(&var1);
-        const ArithmeticSymbol *arithmetic2 = static_cast<const ArithmeticSymbol *>(&var2);
+        const ArithmeticSymbol *arithmetic1 = static_cast<const ArithmeticSymbol *>(&var_l);
+        const ArithmeticSymbol *arithmetic2 = static_cast<const ArithmeticSymbol *>(&var_r);
 
         return arithmetic1->ArithmeticSymbolType() == arithmetic2->ArithmeticSymbolType();
     }
     case VariableSymbolType::ARRAY:
     {
-        const ArraySymbol *array1 = static_cast<const ArraySymbol *>(&var1);
-        const ArraySymbol *array2 = static_cast<const ArraySymbol *>(&var2);
+        const ArraySymbol *array1 = static_cast<const ArraySymbol *>(&var_l);
+        const ArraySymbol *array2 = static_cast<const ArraySymbol *>(&var_r);
 
         while (array1->VariableSymbolType() == VariableSymbolType::ARRAY &&
                array2->VariableSymbolType() == VariableSymbolType::ARRAY)
@@ -129,8 +129,8 @@ bool SemanticAnalyser::CheckAssignmentTypeCompatibility(
     }
     case VariableSymbolType::STRUCT:
     {
-        const StructSymbol *struct1 = static_cast<const StructSymbol *>(&var1);
-        const StructSymbol *struct2 = static_cast<const StructSymbol *>(&var2);
+        const StructSymbol *struct1 = static_cast<const StructSymbol *>(&var_l);
+        const StructSymbol *struct2 = static_cast<const StructSymbol *>(&var_r);
 
         if (!struct_def_symbol_table_.contains(struct1->StructName()) ||
             !struct_def_symbol_table_.contains(struct2->StructName()))
@@ -148,11 +148,11 @@ bool SemanticAnalyser::CheckAssignmentTypeCompatibility(
 }
 
 bool SemanticAnalyser::CheckStructAssignmentTypeCompatibility(
-    const StructDefSymbol &def1,
-    const StructDefSymbol &def2) const
+    const StructDefSymbol &def_l,
+    const StructDefSymbol &def_r) const
 {
-    auto fields1 = def1.Fields();
-    auto fields2 = def2.Fields();
+    auto fields1 = def_l.Fields();
+    auto fields2 = def_r.Fields();
     if (fields1.size() != fields2.size())
     {
         return false;
@@ -175,7 +175,6 @@ void SemanticAnalyser::DoExtDefList(KTreeNode *node)
     while (node != NULL)
     {
         DoExtDef(node->l_child);
-
         node = node->r_child;
     }
 }
@@ -264,8 +263,7 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDecListDefCommon(
                         "Cannot assign '" +
                             GetSymbolTypeName(dec) +
                             "' to a variable of type '" +
-                            GetSymbolTypeName(specifier) +
-                            '\n');
+                            GetSymbolTypeName(specifier));
 
                     continue;
                 }
@@ -298,8 +296,7 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDecListDefCommon(
                         "Cannot assign '" +
                             GetSymbolTypeName(dec) +
                             "' to a variable of type '" +
-                            GetSymbolTypeName(specifier) +
-                            '\n');
+                            GetSymbolTypeName(specifier));
 
                     continue;
                 }
@@ -351,8 +348,7 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDecListDefCommon(
                     "Cannot assign '" +
                         GetSymbolTypeName(dec) +
                         "' to a variable of type '" +
-                        GetSymbolTypeName(specifier) +
-                        '\n');
+                        GetSymbolTypeName(specifier));
 
                 continue;
             }
@@ -387,7 +383,7 @@ VariableSymbolSharedPtr SemanticAnalyser::DoSpecifier(KTreeNode *node)
     if (node->l_child->value->is_token)
     {
         return std::make_shared<ArithmeticSymbol>(
-            GetLineNumber(node->l_child),
+            GetKTreeNodeLineNumber(node->l_child),
             "",
             node->l_child->value->ast_node_value.token->type == TOKEN_KEYWORD_TYPE_INT
                 ? ArithmeticSymbolType::INT
@@ -425,11 +421,11 @@ std::shared_ptr<StructSymbol> SemanticAnalyser::DoStructSpecifier(KTreeNode *nod
         if (struct_def_symbol_table_.contains(struct_name))
         {
             return std::make_shared<StructSymbol>(
-                GetLineNumber(struct_id_node), "", struct_name);
+                GetKTreeNodeLineNumber(struct_id_node), "", struct_name);
         }
 
         PrintError(kErrorUndefinedStruct,
-                   GetLineNumber(struct_id_node),
+                   GetKTreeNodeLineNumber(struct_id_node),
                    "Struct '" + struct_name + "' is not defined");
         return nullptr;
     }
@@ -454,7 +450,7 @@ std::shared_ptr<StructSymbol> SemanticAnalyser::DoStructSpecifier(KTreeNode *nod
             if (struct_def_symbol_table_.contains(struct_name))
             {
                 PrintError(kErrorDuplicateStructName,
-                           GetLineNumber(node->l_child->r_sibling->l_child),
+                           GetKTreeNodeLineNumber(node->l_child->r_sibling->l_child),
                            "Duplicate struct name '" + struct_name + '\'');
                 return nullptr;
             }
@@ -508,9 +504,9 @@ std::shared_ptr<StructSymbol> SemanticAnalyser::DoStructSpecifier(KTreeNode *nod
         }
 
         struct_def_symbol_table_[struct_name] = std::make_shared<StructDefSymbol>(
-            GetLineNumber(node->l_child), struct_name, fields);
+            GetKTreeNodeLineNumber(node->l_child), struct_name, fields);
 
-        return std::make_shared<StructSymbol>(GetLineNumber(node->l_child), "", struct_name);
+        return std::make_shared<StructSymbol>(GetKTreeNodeLineNumber(node->l_child), "", struct_name);
     }
 }
 
@@ -578,8 +574,8 @@ VariableSymbolSharedPtr SemanticAnalyser::DoDec(KTreeNode *node)
         var_dec->LineNumber(),
         var_dec->Name(),
         var_dec->VariableSymbolType(),
-        initial_value != nullptr,
-        initial_value);
+        initial_value.first != nullptr,
+        initial_value.first);
 }
 
 // Return value contains variable name and whether is array.
@@ -592,7 +588,7 @@ VariableSymbolSharedPtr SemanticAnalyser::DoVarDec(KTreeNode *node)
         node->l_child->value->ast_node_value.token->type == TOKEN_ID)
     {
         return std::make_shared<VariableSymbol>(
-            GetLineNumber(node->l_child),
+            GetKTreeNodeLineNumber(node->l_child),
             node->l_child->value->ast_node_value.token->value,
             VariableSymbolType::UNKNOWN);
     }
@@ -612,93 +608,286 @@ VariableSymbolSharedPtr SemanticAnalyser::DoVarDec(KTreeNode *node)
 }
 
 // [CHECKS] kErrorUndefinedVariable,
-//          kErrorDuplicateStructFieldName,
-//          kErrorStructFieldInitialized
-// Return value contains exp type.
-VariableSymbolSharedPtr SemanticAnalyser::DoExp(KTreeNode *node)
+//          kErrorUndefinedFunction,
+//          kErrorInvalidInvokeOperator,
+//          kErrorFunctionArgsMismatch,
+//          kErrorAssignToRValue,
+//          kErrorAssignTypeMismatch
+// Returns <exp-type, is-l-value>.
+std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(KTreeNode *node)
 {
-    // Exp: ID | LITERAL_INT | LITERAL_FP
-    if (node->l_child->value->is_token &&
-        node->l_child->r_sibling == NULL)
+    if (node->l_child->value->is_token)
     {
-        switch (node->l_child->value->ast_node_value.token->type)
+        // Exp: ID | LITERAL_INT | LITERAL_FP /////////////////////////////
+        if (node->r_child == NULL)
         {
-        case TOKEN_ID:
-        {
-            std::string variable_name = node->l_child->value->ast_node_value.token->value;
-            if (symbol_table_.contains(variable_name))
+            switch (node->l_child->value->ast_node_value.token->type)
             {
-                return symbol_table_[variable_name];
+            case TOKEN_ID:
+            {
+                std::string variable_name = node->l_child->value->ast_node_value.token->value;
+                if (symbol_table_.contains(variable_name))
+                {
+                    return {symbol_table_[variable_name], true};
+                }
+                else
+                {
+                    PrintError(kErrorUndefinedVariable,
+                               GetKTreeNodeLineNumber(node->l_child),
+                               "Undefined variable '" + variable_name + '\'');
+                    return {nullptr, false};
+                }
             }
+            case TOKEN_LITERAL_INT:
+            {
+                return {std::make_shared<ArithmeticSymbol>(
+                            GetKTreeNodeLineNumber(node->l_child),
+                            "",
+                            ArithmeticSymbolType::INT),
+                        false};
+            }
+            case TOKEN_LITERAL_FP:
+            {
+                return {std::make_shared<ArithmeticSymbol>(
+                            GetKTreeNodeLineNumber(node->l_child),
+                            "",
+                            ArithmeticSymbolType::FLOAT),
+                        false};
+            }
+            default:
+                return {nullptr, false};
+            }
+        }
+        ///////////////////////////////////////////////////////////////////
+
+        // Exp: ID L_BRACKET R_BRACKET | ID L_BRACKET Args R_BRACKET //////
+        if (node->l_child->value->ast_node_value.token->type == TOKEN_ID &&
+            node->l_child->r_sibling != NULL &&
+            node->l_child->r_sibling->value->is_token &&
+            node->l_child->r_sibling->value->ast_node_value.token->type ==
+                TOKEN_DELIMITER_L_BRACKET)
+        {
+            std::string function_name = node->l_child->value->ast_node_value.token->value;
+            // No such callee symbol
+            if (!symbol_table_.contains(function_name))
+            {
+                PrintError(kErrorUndefinedFunction,
+                           GetKTreeNodeLineNumber(node->l_child),
+                           "Cannot find function '" + function_name + '\'');
+
+                return {nullptr, false};
+            }
+
+            auto function_variable_symbol = symbol_table_[function_name];
+            // is not a function
+            if (function_variable_symbol->VariableSymbolType() != VariableSymbolType::FUNCTION)
+            {
+                PrintError(kErrorInvalidInvokeOperator,
+                           GetKTreeNodeLineNumber(node->l_child->r_sibling),
+                           "A(n) '" + GetSymbolTypeName(symbol_table_[function_name]) + "' variable is not callable");
+
+                return {nullptr, false};
+            }
+
+            auto function_symbol = static_cast<FunctionSymbol *>(function_variable_symbol.get());
+            auto function_args = function_symbol->Args();
+            // Check args
+            // Call with args
+            auto args_node = node->l_child->r_sibling->r_sibling;
+            if (!args_node->value->is_token)
+            {
+                auto args = DoArgs(args_node);
+
+                if (args.size() != function_args.size())
+                {
+                    PrintError(kErrorFunctionArgsMismatch,
+                               GetKTreeNodeLineNumber(args_node),
+                               "Expected " +
+                                   std::to_string(function_args.size()) +
+                                   " arguments, but " +
+                                   std::to_string(args.size()) +
+                                   " were given");
+                    return {nullptr, false};
+                }
+
+                for (int i = 0; i < function_args.size(); i++)
+                {
+                    if (!CheckAssignmentTypeCompatibility(*function_args[i], *args[i]))
+                    {
+                        PrintError(kErrorFunctionArgsMismatch,
+                                   args[i]->LineNumber(),
+                                   "Expected " +
+                                       std::to_string(function_args.size()) +
+                                       " arguments, but " +
+                                       std::to_string(args.size()) +
+                                       " given");
+                        return {nullptr, false};
+                    }
+                }
+            }
+            // Call with no args
             else
             {
-                PrintError(kErrorUndefinedVariable,
-                           GetLineNumber(node->l_child),
-                           "Undefined variable '" + variable_name + '\'');
-                return nullptr;
+                if (function_args.size() != 0)
+                {
+                    PrintError(kErrorFunctionArgsMismatch,
+                               GetKTreeNodeLineNumber(args_node),
+                               "Expected " +
+                                   std::to_string(function_args.size()) +
+                                   " arguments, but 0 given");
+                    return {nullptr, false};
+                }
             }
+
+            return {function_symbol->ReturnType(), false};
         }
-        case TOKEN_LITERAL_INT:
+        ///////////////////////////////////////////////////////////////////
+
+        // Exp: SUB Exp ///////////////////////////////////////////////////
+        if (node->l_child->value->ast_node_value.token->type == TOKEN_OPERATOR_SUB)
         {
-            return std::make_shared<ArithmeticSymbol>(
-                GetLineNumber(node->l_child),
-                "",
-                ArithmeticSymbolType::INT);
+            auto expression = DoExp(node->r_child);
+            if (expression.first == nullptr)
+            {
+                return {nullptr, false};
+            }
+
+            if (expression.first->VariableSymbolType() != VariableSymbolType::ARITHMETIC)
+            {
+                PrintError(kErrorOperandTypeMismatch,
+                           expression.first->LineNumber(),
+                           "Not a numeric type");
+                return {nullptr, false};
+            }
+
+            return {expression.first, false};
         }
-        case TOKEN_LITERAL_FP:
+        ///////////////////////////////////////////////////////////////////
+
+        // Exp: NOT Exp ///////////////////////////////////////////////////
+        if (node->l_child->value->ast_node_value.token->type == TOKEN_OPERATOR_LOGICAL_NOT)
         {
-            return std::make_shared<ArithmeticSymbol>(
-                GetLineNumber(node->l_child),
-                "",
-                ArithmeticSymbolType::FLOAT);
+            auto expression = DoExp(node->r_child);
+            if (expression.first == nullptr)
+            {
+                return {nullptr, false};
+            }
+
+            if (expression.first->VariableSymbolType() != VariableSymbolType::ARITHMETIC ||
+                static_cast<ArithmeticSymbol *>(expression.first.get())->ArithmeticSymbolType() !=
+                    ArithmeticSymbolType::INT)
+            {
+                PrintError(kErrorOperandTypeMismatch,
+                           expression.first->LineNumber(),
+                           "Logical operator operand is not 'int' type");
+                return {nullptr, false};
+            }
+
+            return {expression.first, false};
         }
-        default:
-            return nullptr;
-        }
+        ///////////////////////////////////////////////////////////////////
+
+        // Exp: L_BRACKET Exp R_BRACKET ///////////////////////////////////
+        // This keeps l/r-value type
+        return DoExp(node->l_child->r_sibling);
+        ///////////////////////////////////////////////////////////////////
     }
-
-    // Exp: ID L_BRACKET R_BRACKET | ID L_BRACKET Args R_BRACKET
-    if (node->l_child->value->is_token &&
-        node->l_child->value->ast_node_value.token->type == TOKEN_ID &&
-        node->l_child->r_sibling != NULL &&
-        node->l_child->r_sibling->value->is_token &&
-        node->l_child->r_sibling->value->ast_node_value.token->type == TOKEN_DELIMITER_L_BRACKET)
+    else
     {
-        std::string function_name = node->l_child->value->ast_node_value.token->value;
-        // No such callee symbol
-        if (!symbol_table_.contains(function_name))
-        {
-            PrintError(kErrorUndefinedFunction,
-                       GetLineNumber(node->l_child),
-                       "Cannot find function '" + function_name + '\'');
+        auto second_child = node->l_child->r_sibling;
 
-            return nullptr;
+        switch (second_child->value->ast_node_value.token->type)
+        {
+        case TOKEN_OPERATOR_ASSIGN:
+        {
+            auto l_exp = DoExp(node->l_child);
+            if (l_exp.first == nullptr)
+            {
+                return {nullptr, false};
+            }
+
+            auto r_exp = DoExp(node->r_child);
+            if (r_exp.first == nullptr)
+            {
+                return {nullptr, false};
+            }
+
+            if (!l_exp.second)
+            {
+                PrintError(kErrorAssignToRValue,
+                           l_exp.first->LineNumber(),
+                           "Cannot assign to a right value");
+
+                return {nullptr, false};
+            }
+
+            if (!CheckAssignmentTypeCompatibility(*l_exp.first, *r_exp.first))
+            {
+                PrintError(
+                    kErrorAssignTypeMismatch,
+                    r_exp.first->LineNumber(),
+                    "Cannot assign '" +
+                        GetSymbolTypeName(r_exp.first) +
+                        "' to a variable of type '" +
+                        GetSymbolTypeName(l_exp.first));
+
+                return {nullptr, false};
+            }
+
+            return {r_exp.first, false};
         }
 
-        auto function_symbol = symbol_table_[function_name];
-        // is not a function
-        if (function_symbol->VariableSymbolType() != VariableSymbolType::FUNCTION)
+        case TOKEN_OPERATOR_LOGICAL_AND:
+        case TOKEN_OPERATOR_LOGICAL_OR:
         {
-            PrintError(kErrorInvalidInvokeOperator,
-                       GetLineNumber(node->l_child->r_sibling),
-                       "A(n) '" + GetSymbolTypeName(symbol_table_[function_name]) + "' variable is not callable");
+            auto l_exp = DoExp(node->l_child);
+            if (l_exp.first == nullptr)
+            {
+                return {nullptr, false};
+            }
 
-            return nullptr;
+            auto r_exp = DoExp(node->r_child);
+            if (r_exp.first == nullptr)
+            {
+                return {nullptr, false};
+            }
+
+            if (l_exp.first->VariableSymbolType() != VariableSymbolType::ARITHMETIC ||
+                static_cast<ArithmeticSymbol *>(l_exp.first.get())->ArithmeticSymbolType() !=
+                    ArithmeticSymbolType::INT)
+            {
+                PrintError(kErrorOperandTypeMismatch,
+                           l_exp.first->LineNumber(),
+                           "Logical operator operand is not 'int' type");
+                return {nullptr, false};
+            }
+
+            if (r_exp.first->VariableSymbolType() != VariableSymbolType::ARITHMETIC ||
+                static_cast<ArithmeticSymbol *>(r_exp.first.get())->ArithmeticSymbolType() !=
+                    ArithmeticSymbolType::INT)
+            {
+                PrintError(kErrorOperandTypeMismatch,
+                           r_exp.first->LineNumber(),
+                           "Logical operator operand is not 'int' type");
+                return {nullptr, false};
+            }
+
+            return {l_exp.first, false};
         }
-
-        // Check args
-
-        return static_cast<FunctionSymbol *>(function_symbol.get())->ReturnType();
+        }
     }
 }
 
+// Returns a list of DoExp results.
 std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoArgs(KTreeNode *node)
 {
     std::vector<VariableSymbolSharedPtr> args;
 
     while (node->r_child != NULL)
     {
-        args.push_back(DoExp(node->l_child));
+        args.push_back(DoExp(node->l_child).first);
         node = node->r_child;
     }
+
+    return args;
 }

@@ -31,15 +31,15 @@ private:
     std::mt19937 mt19937_;
     std::uniform_int_distribution<> distribution_;
 
-    static constexpr int kErrorUndefinedVariable = 1;
-    static constexpr int kErrorUndefinedFunction = 2;
+    static constexpr int kErrorUndefinedVariable = 1;     // Impled
+    static constexpr int kErrorUndefinedFunction = 2;     // Impled
     static constexpr int kErrorDuplicateVariableName = 3; // ExtDef impled
     static constexpr int kErrorDuplicateFunctionName = 4;
-    static constexpr int kErrorAssignTypeMismatch = 5; // Dec impled
+    static constexpr int kErrorAssignTypeMismatch = 5; // Impled
     static constexpr int kErrorAssignToRValue = 6;
     static constexpr int kErrorOperandTypeMismatch = 7;
     static constexpr int kErrorReturnTypeMismatch = 8;
-    static constexpr int kErrorFunctionArgsMismatch = 9;
+    static constexpr int kErrorFunctionArgsMismatch = 9; // Impled
     static constexpr int kErrorInvalidIndexOperator = 10;
     static constexpr int kErrorInvalidInvokeOperator = 11;
     static constexpr int kErrorIndexNotInteger = 12;
@@ -71,7 +71,7 @@ public:
 
 private:
     int
-    GetLineNumber(const KTreeNode *node) const;
+    GetKTreeNodeLineNumber(const KTreeNode *node) const;
     std::string GetSymbolTypeName(const VariableSymbolSharedPtr &symbol) const;
     std::string GetSymbolTypeName(const VariableSymbol *symbol) const;
     void PrintError(
@@ -79,12 +79,12 @@ private:
     std::string GetNewAnnoyStructName();
 
     bool CheckAssignmentTypeCompatibility(
-        const VariableSymbol &var1,
-        const VariableSymbol &var2) const;
+        const VariableSymbol &var_l,
+        const VariableSymbol &var_r) const;
 
     bool CheckStructAssignmentTypeCompatibility(
-        const StructDefSymbol &def1,
-        const StructDefSymbol &def2) const;
+        const StructDefSymbol &def_l,
+        const StructDefSymbol &def_r) const;
 
     // Refer to C-- syntax defined in Lab1/parser.y for a better understanding of each method
     // Contract: Functions that return a single ptr may return nullptr.
@@ -102,6 +102,6 @@ private:
     std::vector<VariableSymbolSharedPtr> DoDecList(KTreeNode *node);
     VariableSymbolSharedPtr DoDec(KTreeNode *node);
     VariableSymbolSharedPtr DoVarDec(KTreeNode *node);
-    VariableSymbolSharedPtr DoExp(KTreeNode *node);
+    std::pair<VariableSymbolSharedPtr, bool> DoExp(KTreeNode *node);
     std::vector<VariableSymbolSharedPtr> DoArgs(KTreeNode *node);
 };
