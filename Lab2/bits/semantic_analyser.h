@@ -11,7 +11,6 @@
 #include "../../Lab1/bits/k_tree.h"
 #include "../../Lab1/bits/token.h"
 #include "../../Lab1/bits/variable.h"
-#include "./symbols/symbol.h"
 #include "./symbols/variable_symbol.h"
 #include "./symbols/arithmetic_symbol.h"
 #include "./symbols/array_symbol.h"
@@ -19,13 +18,15 @@
 #include "./symbols/struct_symbol.h"
 #include "./symbols/struct_def_symbol.h"
 
-using SymbolTable = std::unordered_map<std::string, SymbolSharedPtr>;
+using SymbolTable = std::unordered_map<std::string, VariableSymbolSharedPtr>;
+using StructDefSymbolTable = std::unordered_map<std::string, StructDefSymbolSharedPtr>;
 
 class SemanticAnalyser
 {
 private:
     bool has_semantic_error_;
     SymbolTable symbol_table_;
+    StructDefSymbolTable struct_def_symbol_table_;
     std::random_device random_device_;
     std::mt19937 mt19937_;
     std::uniform_int_distribution<> distribution_;
@@ -63,10 +64,16 @@ public:
         return symbol_table_;
     }
 
+    StructDefSymbolTable StructDefSymbolTable() const
+    {
+        return struct_def_symbol_table_;
+    }
+
 private:
-    int GetLineNumber(const KTreeNode *node) const;
-    std::string GetSymbolTypeName(const SymbolSharedPtr &symbol) const;
-    std::string GetSymbolTypeName(const Symbol *symbol) const;
+    int
+    GetLineNumber(const KTreeNode *node) const;
+    std::string GetSymbolTypeName(const VariableSymbolSharedPtr &symbol) const;
+    std::string GetSymbolTypeName(const VariableSymbol *symbol) const;
     void PrintError(
         const int type, const int line_number, const std::string &message);
     std::string GetNewAnnoyStructName();
@@ -85,8 +92,8 @@ private:
     void DoExtDefList(KTreeNode *node);
     void DoExtDef(KTreeNode *node);
     std::vector<VariableSymbolSharedPtr> DoDecListDefCommon(
-        const VariableSymbolSharedPtr& specifier,
-        const std::vector<VariableSymbolSharedPtr>& dec_list);
+        const VariableSymbolSharedPtr &specifier,
+        const std::vector<VariableSymbolSharedPtr> &dec_list);
     std::vector<VariableSymbolSharedPtr> DoExtDecList(KTreeNode *node);
     VariableSymbolSharedPtr DoSpecifier(KTreeNode *node);
     std::shared_ptr<StructSymbol> DoStructSpecifier(KTreeNode *node);

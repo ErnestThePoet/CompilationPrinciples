@@ -15,62 +15,52 @@ int SemanticAnalyser::GetLineNumber(const KTreeNode *node) const
                : node->value->ast_node_value.variable->line_start;
 }
 
-std::string SemanticAnalyser::GetSymbolTypeName(const SymbolSharedPtr &symbol) const
+std::string SemanticAnalyser::GetSymbolTypeName(const VariableSymbolSharedPtr &symbol) const
 {
     return GetSymbolTypeName(symbol.get());
 }
 
-std::string SemanticAnalyser::GetSymbolTypeName(const Symbol *symbol) const
+std::string SemanticAnalyser::GetSymbolTypeName(const VariableSymbol *symbol) const
 {
-    switch (symbol->SymbolType())
+    const VariableSymbol *variable_symbol = static_cast<const VariableSymbol *>(symbol);
+    switch (variable_symbol->VariableSymbolType())
     {
-    case SymbolType::STRUCT_DEF:
-        return "structdef " + static_cast<const StructDefSymbol *>(symbol)->Name();
-    case SymbolType::VARIABLE:
-        const VariableSymbol *variable_symbol = static_cast<const VariableSymbol *>(symbol);
-        switch (variable_symbol->VariableSymbolType())
+    case VariableSymbolType::ARITHMETIC:
+        switch (static_cast<const ArithmeticSymbol *>(variable_symbol)->ArithmeticSymbolType())
         {
-        case VariableSymbolType::ARITHMETIC:
-            switch (static_cast<const ArithmeticSymbol *>(variable_symbol)->ArithmeticSymbolType())
-            {
-            case ArithmeticSymbolType::INT:
-                return "int";
-            case ArithmeticSymbolType::FLOAT:
-                return "float";
-            case ArithmeticSymbolType::UNKNOWN:
-            default:
-                return "<UNKNOWN ARITHMETIC>";
-            }
-
-        case VariableSymbolType::ARRAY:
-        {
-            std::string array_type_name;
-            const ArraySymbol *array_symbol = static_cast<const ArraySymbol *>(variable_symbol);
-            while (array_symbol->VariableSymbolType() == VariableSymbolType::ARRAY)
-            {
-                array_type_name = "[]" + array_type_name;
-                array_symbol = static_cast<ArraySymbol *>(array_symbol->ElemType().get());
-            }
-
-            array_type_name = GetSymbolTypeName(array_symbol) + ' ' + array_type_name;
-
-            return array_type_name;
-        }
-
-        case VariableSymbolType::FUNCTION:
-            return "function";
-
-        case VariableSymbolType::STRUCT:
-            return "struct " + static_cast<const StructSymbol *>(variable_symbol)->StructName();
-
-        case VariableSymbolType::UNKNOWN:
+        case ArithmeticSymbolType::INT:
+            return "int";
+        case ArithmeticSymbolType::FLOAT:
+            return "float";
+        case ArithmeticSymbolType::UNKNOWN:
         default:
-            return "<UNKNOWN VARIABLE>";
+            return "<UNKNOWN ARITHMETIC>";
         }
 
-    case SymbolType::UNKNOWN:
+    case VariableSymbolType::ARRAY:
+    {
+        std::string array_type_name;
+        const ArraySymbol *array_symbol = static_cast<const ArraySymbol *>(variable_symbol);
+        while (array_symbol->VariableSymbolType() == VariableSymbolType::ARRAY)
+        {
+            array_type_name = "[]" + array_type_name;
+            array_symbol = static_cast<ArraySymbol *>(array_symbol->ElemType().get());
+        }
+
+        array_type_name = GetSymbolTypeName(array_symbol) + ' ' + array_type_name;
+
+        return array_type_name;
+    }
+
+    case VariableSymbolType::FUNCTION:
+        return "function";
+
+    case VariableSymbolType::STRUCT:
+        return "struct " + static_cast<const StructSymbol *>(variable_symbol)->StructName();
+
+    case VariableSymbolType::UNKNOWN:
     default:
-        return "<UNKNOWN>";
+        return "<UNKNOWN VARIABLE>";
     }
 }
 
@@ -91,7 +81,7 @@ std::string SemanticAnalyser::GetNewAnnoyStructName()
         std::ostringstream oss;
         oss << std::hex << distribution_(mt19937_);
         new_annoy_name = annoy_name_prefix + oss.str();
-    } while (symbol_table_.contains(new_annoy_name));
+    } while (struct_def_symbol_table_.contains(new_annoy_name));
 
     return new_annoy_name;
 }
@@ -140,17 +130,15 @@ bool SemanticAnalyser::CheckAssignmentTypeCompatibility(
         const StructSymbol *struct1 = static_cast<const StructSymbol *>(&var1);
         const StructSymbol *struct2 = static_cast<const StructSymbol *>(&var2);
 
-        if (!symbol_table_.contains(struct1->StructName()) ||
-            !symbol_table_.contains(struct2->StructName()))
+        if (!struct_def_symbol_table_.contains(struct1->StructName()) ||
+            !struct_def_symbol_table_.contains(struct2->StructName()))
         {
             return false;
         }
 
         return CheckStructAssignmentTypeCompatibility(
-            *(static_cast<const StructDefSymbol *>(
-                symbol_table_.at(struct1->StructName()).get())),
-            *(static_cast<const StructDefSymbol *>(
-                symbol_table_.at(struct2->StructName()).get())));
+            *struct_def_symbol_table_.at(struct1->StructName()).get(),
+            *struct_def_symbol_table_.at(struct2->StructName()).get());
     }
     default:
         return false;
@@ -271,8 +259,7 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDecListDefCommon(
             else
             {
                 std::string struct_name = static_cast<StructSymbol *>(specifier.get())->StructName();
-                if (!symbol_table_.contains(struct_name) ||
-                    symbol_table_[struct_name]->SymbolType() != SymbolType::STRUCT_DEF)
+                if (!struct_def_symbol_table_.contains(struct_name))
                 {
                     PrintError(kErrorUndefinedStruct, dec->LineNumber(),
                                "Undefined struct type: " + GetSymbolTypeName(specifier));
@@ -415,8 +402,7 @@ std::shared_ptr<StructSymbol> SemanticAnalyser::DoStructSpecifier(KTreeNode *nod
         KTreeNode *struct_id_node = node->l_child->r_sibling->l_child;
         struct_name =
             struct_id_node->value->ast_node_value.token->value;
-        if (symbol_table_.contains(struct_name) &&
-            symbol_table_[struct_name]->SymbolType() == SymbolType::STRUCT_DEF)
+        if (struct_def_symbol_table_.contains(struct_name))
         {
             return std::make_shared<StructSymbol>(
                 GetLineNumber(struct_id_node), "", struct_name);
@@ -445,7 +431,7 @@ std::shared_ptr<StructSymbol> SemanticAnalyser::DoStructSpecifier(KTreeNode *nod
             struct_name = node->l_child->r_sibling->l_child->value->ast_node_value.token->value;
             def_list_node = node->l_child->r_sibling->r_sibling->r_sibling;
 
-            if (symbol_table_.contains(struct_name))
+            if (struct_def_symbol_table_.contains(struct_name))
             {
                 PrintError(kErrorDuplicateStructName,
                            GetLineNumber(node->l_child->r_sibling->l_child),
@@ -491,7 +477,7 @@ std::shared_ptr<StructSymbol> SemanticAnalyser::DoStructSpecifier(KTreeNode *nod
             }
         }
 
-        symbol_table_[struct_name] = std::make_shared<StructDefSymbol>(
+        struct_def_symbol_table_[struct_name] = std::make_shared<StructDefSymbol>(
             GetLineNumber(node->l_child), struct_name, fields);
 
         return std::make_shared<StructSymbol>(GetLineNumber(node->l_child), "", struct_name);
@@ -588,6 +574,22 @@ VariableSymbolSharedPtr SemanticAnalyser::DoVarDec(KTreeNode *node)
         std::stoull(node->l_child->r_sibling->r_sibling->value->ast_node_value.token->value));
 }
 
-VariableSymbolSharedPtr DoExp(KTreeNode *node)
+// [CHECKS] kErrorUndefinedVariable,
+//          kErrorDuplicateStructFieldName,
+//          kErrorStructFieldInitialized
+VariableSymbolSharedPtr SemanticAnalyser::DoExp(KTreeNode *node)
 {
+    // Exp: ID | LITERAL_INT | LITERAL_FP
+    if (node->l_child->value->is_token &&
+        node->l_child->r_sibling == NULL)
+    {
+        // ID
+        if (node->l_child->value->ast_node_value.token->type == TOKEN_ID)
+        {
+            if (symbol_table_.contains(node->l_child->value->ast_node_value.token->value))
+            {
+                return symbol_table_[node->l_child->value->ast_node_value.token->value];
+            }
+        }
+    }
 }

@@ -28,3 +28,5 @@ public:
         return fields_;
     }
 };
+
+using StructDefSymbolSharedPtr = std::shared_ptr<StructDefSymbol>;

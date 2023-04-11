@@ -5,6 +5,22 @@
 
 #include "symbol_type.h"
 
+/****************************************************************
+*         Inheritance diagram
+*
+*               Symbol
+*                / \
+*              /    \
+*            /       \
+* VariableSymbol     StructDefSymbol
+*  |          \
+*  |    ...    ------------------------------------
+*  |                    \             \            \
+* ArithmeticSymbol ArraySymbol FunctionSymbol StructSymbol
+*
+*
+*****************************************************************/
+
 class Symbol
 {
 private:
@@ -35,5 +51,3 @@ public:
         return symbol_type_;
     }
 };
-
-using SymbolSharedPtr = std::shared_ptr<Symbol>;
