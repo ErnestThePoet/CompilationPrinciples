@@ -195,6 +195,7 @@ void SemanticAnalyser::DoExtDefList(const KTreeNode *node)
     }
 }
 
+// [INSERTS] VariableSymbol
 // [CHECKS] kErrorDuplicateVariableName,
 //          kErrorDuplicateFunctionName
 void SemanticAnalyser::DoExtDef(const KTreeNode *node)
@@ -379,7 +380,7 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDecListDefCommon(
 // Returns a list of DoVarDec results.
 std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoExtDecList(const KTreeNode *node)
 {
-    // DecList: Dec | Dec COMMA DecList
+    // ExtDecList: VarDec | VarDec COMMA ExtDecList
     std::vector<VariableSymbolSharedPtr> decs;
 
     while (node != NULL)
@@ -623,11 +624,49 @@ VariableSymbolSharedPtr SemanticAnalyser::DoVarDec(const KTreeNode *node)
         std::stoull(node->l_child->r_sibling->r_sibling->value->ast_node_value.token->value));
 }
 
+// Returns a function symbol containing name and arguments information.
+// When one argument declaration contains semantic error(is a nullptr),
+// then it is ignored as if the function didn't take that argument.
 std::shared_ptr<FunctionSymbol> SemanticAnalyser::DoFunDec(const KTreeNode *node)
 {
+    std::string function_name = node->l_child->value->ast_node_value.token->value;
+
+    // FunDec: ID L_BRACKET R_BRACKET
+    if (node->l_child->r_sibling->r_sibling->value->is_token)
+    {
+        return std::make_shared<FunctionSymbol>(
+            GetKTreeNodeLineNumber(node->l_child),
+            function_name,
+            std::vector<VariableSymbolSharedPtr>(),
+            nullptr);
+    }
+    // FunDec: ID L_BRACKET VarList R_BRACKET
+    else
+    {
+        std::vector<VariableSymbolSharedPtr> filtered_args;
+
+        auto args = DoVarList(node->l_child->r_sibling->r_sibling);
+
+        for (auto &arg : args)
+        {
+            if (arg != nullptr)
+            {
+                filtered_args.push_back(arg);
+            }
+        }
+
+        return std::make_shared<FunctionSymbol>(
+            GetKTreeNodeLineNumber(node->l_child),
+            function_name,
+            filtered_args,
+            nullptr);
+    }
 }
+
+// Return a list of param declarations, each of which contains full symbol information.
 std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoVarList(const KTreeNode *node)
 {
+    // VarList: ParamDec COMMA VarList | ParamDec
     std::vector<VariableSymbolSharedPtr> vars;
 
     while (node != NULL)
@@ -1047,6 +1086,7 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
 // Returns a list of DoExp results.
 std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoArgs(const KTreeNode *node)
 {
+    // Args: Exp COMMA Args | Exp
     std::vector<VariableSymbolSharedPtr> args;
 
     while (node != NULL)

@@ -35,10 +35,10 @@ private:
     static constexpr int kErrorUndefinedVariable = 1;     // Impled
     static constexpr int kErrorUndefinedFunction = 2;     // Impled
     static constexpr int kErrorDuplicateVariableName = 3; // ExtDef impled
-    static constexpr int kErrorDuplicateFunctionName = 4;
-    static constexpr int kErrorAssignTypeMismatch = 5; // Impled
-    static constexpr int kErrorAssignToRValue = 6;     // Impled
-    static constexpr int kErrorOperandTypeMismatch = 7;
+    static constexpr int kErrorDuplicateFunctionName = 4; // Impled
+    static constexpr int kErrorAssignTypeMismatch = 5;    // Impled
+    static constexpr int kErrorAssignToRValue = 6;        // Impled
+    static constexpr int kErrorOperandTypeMismatch = 7;   // Impled
     static constexpr int kErrorReturnTypeMismatch = 8;
     static constexpr int kErrorFunctionArgsMismatch = 9;      // Impled
     static constexpr int kErrorInvalidIndexOperator = 10;     // Impled
