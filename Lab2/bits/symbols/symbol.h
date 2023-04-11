@@ -36,7 +36,7 @@ public:
           name_(name),
           symbol_type_(symbol_type) {}
 
-    int LineNumber()
+    int LineNumber() const
     {
         return line_number_;
     }

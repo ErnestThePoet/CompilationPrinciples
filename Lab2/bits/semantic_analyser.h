@@ -86,7 +86,7 @@ private:
         const StructDefSymbol &def1,
         const StructDefSymbol &def2) const;
 
-    // Please combine the actual syntax in .y file to fully understand each method
+    // Refer to C-- syntax defined in Lab1/parser.y for a better understanding of each method
     // Contract: Functions that return a single ptr may return nullptr.
     //           Functions that return a vector of ptr also preserve nullptr in that vector.
     void DoExtDefList(KTreeNode *node);

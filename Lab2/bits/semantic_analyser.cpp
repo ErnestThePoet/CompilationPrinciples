@@ -176,7 +176,7 @@ void SemanticAnalyser::DoExtDefList(KTreeNode *node)
     {
         DoExtDef(node->l_child);
 
-        node = node->l_child->r_sibling;
+        node = node->r_child;
     }
 }
 
@@ -370,10 +370,10 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoExtDecList(KTreeNode *n
     // DecList: Dec | Dec COMMA DecList
     std::vector<VariableSymbolSharedPtr> decs;
 
-    while (node->l_child->r_sibling != NULL)
+    while (node->r_child != NULL)
     {
         decs.push_back(DoVarDec(node->l_child));
-        node = node->l_child->r_sibling->r_sibling;
+        node = node->r_child;
     }
 
     return decs;
@@ -523,7 +523,7 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDefList(KTreeNode *node
     {
         auto current_defs = DoDef(node->l_child);
         defs.insert(defs.cend(), current_defs.begin(), current_defs.end());
-        node = node->l_child->r_sibling;
+        node = node->r_child;
     }
 
     return defs;
@@ -547,10 +547,10 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDecList(KTreeNode *node
     // DecList: Dec | Dec COMMA DecList
     std::vector<VariableSymbolSharedPtr> decs;
 
-    while (node->l_child->r_sibling != NULL)
+    while (node->r_child != NULL)
     {
         decs.push_back(DoDec(node->l_child));
-        node = node->l_child->r_sibling->r_sibling;
+        node = node->r_child;
     }
 
     return decs;
@@ -689,5 +689,16 @@ VariableSymbolSharedPtr SemanticAnalyser::DoExp(KTreeNode *node)
         // Check args
 
         return static_cast<FunctionSymbol *>(function_symbol.get())->ReturnType();
+    }
+}
+
+std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoArgs(KTreeNode *node)
+{
+    std::vector<VariableSymbolSharedPtr> args;
+
+    while (node->r_child != NULL)
+    {
+        args.push_back(DoExp(node->l_child));
+        node = node->r_child;
     }
 }
