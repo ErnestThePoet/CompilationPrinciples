@@ -8,6 +8,7 @@
 #include <vector>
 #include <utility>
 #include <random>
+#include <algorithm>
 #include "../../Lab1/bits/k_tree.h"
 #include "../../Lab1/bits/token.h"
 #include "../../Lab1/bits/variable.h"
@@ -36,15 +37,15 @@ private:
     static constexpr int kErrorDuplicateVariableName = 3; // ExtDef impled
     static constexpr int kErrorDuplicateFunctionName = 4;
     static constexpr int kErrorAssignTypeMismatch = 5; // Impled
-    static constexpr int kErrorAssignToRValue = 6;
+    static constexpr int kErrorAssignToRValue = 6;     // Impled
     static constexpr int kErrorOperandTypeMismatch = 7;
     static constexpr int kErrorReturnTypeMismatch = 8;
-    static constexpr int kErrorFunctionArgsMismatch = 9; // Impled
-    static constexpr int kErrorInvalidIndexOperator = 10;
-    static constexpr int kErrorInvalidInvokeOperator = 11;
-    static constexpr int kErrorIndexNotInteger = 12;
-    static constexpr int kErrorInvalidDotOperator = 13;
-    static constexpr int kErrorUndefinedStructField = 14;
+    static constexpr int kErrorFunctionArgsMismatch = 9;      // Impled
+    static constexpr int kErrorInvalidIndexOperator = 10;     // Impled
+    static constexpr int kErrorInvalidInvokeOperator = 11;    // Impled
+    static constexpr int kErrorIndexNotInteger = 12;          // Impled
+    static constexpr int kErrorInvalidDotOperator = 13;       // Impled
+    static constexpr int kErrorUndefinedStructField = 14;     // Impled
     static constexpr int kErrorDuplicateStructFieldName = 15; // Impled
     static constexpr int kErrorStructFieldInitialized = 15;   // Impled
     static constexpr int kErrorDuplicateStructName = 16;      // Impled
@@ -72,17 +73,20 @@ public:
 private:
     int
     GetKTreeNodeLineNumber(const KTreeNode *node) const;
-    std::string GetSymbolTypeName(const VariableSymbolSharedPtr &symbol) const;
-    std::string GetSymbolTypeName(const VariableSymbol *symbol) const;
+    std::string GetVariableSymbolTypeName(const VariableSymbolSharedPtr &symbol) const;
+    std::string GetVariableSymbolTypeName(const VariableSymbol *symbol) const;
     void PrintError(
         const int type, const int line_number, const std::string &message);
     std::string GetNewAnnoyStructName();
 
-    bool CheckAssignmentTypeCompatibility(
+    bool IsIntArithmeticSymbol(const VariableSymbol &var) const;
+    bool IsSameTypeArithmeticSymbol(const VariableSymbol &var1, const VariableSymbol &var2) const;
+
+    bool IsAssignmentValid(
         const VariableSymbol &var_l,
         const VariableSymbol &var_r) const;
 
-    bool CheckStructAssignmentTypeCompatibility(
+    bool IsStructAssignmentValid(
         const StructDefSymbol &def_l,
         const StructDefSymbol &def_r) const;
 
