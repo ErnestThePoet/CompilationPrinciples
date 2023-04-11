@@ -93,19 +93,22 @@ private:
     // Refer to C-- syntax defined in Lab1/parser.y for a better understanding of each method
     // Contract: Functions that return a single ptr may return nullptr.
     //           Functions that return a vector of ptr also preserve nullptr in that vector.
-    void DoExtDefList(KTreeNode *node);
-    void DoExtDef(KTreeNode *node);
+    void DoExtDefList(const KTreeNode *node);
+    void DoExtDef(const KTreeNode *node);
     std::vector<VariableSymbolSharedPtr> DoDecListDefCommon(
         const VariableSymbolSharedPtr &specifier,
         const std::vector<VariableSymbolSharedPtr> &dec_list);
-    std::vector<VariableSymbolSharedPtr> DoExtDecList(KTreeNode *node);
-    VariableSymbolSharedPtr DoSpecifier(KTreeNode *node);
-    std::shared_ptr<StructSymbol> DoStructSpecifier(KTreeNode *node);
-    std::vector<VariableSymbolSharedPtr> DoDefList(KTreeNode *node);
-    std::vector<VariableSymbolSharedPtr> DoDef(KTreeNode *node);
-    std::vector<VariableSymbolSharedPtr> DoDecList(KTreeNode *node);
-    VariableSymbolSharedPtr DoDec(KTreeNode *node);
-    VariableSymbolSharedPtr DoVarDec(KTreeNode *node);
-    std::pair<VariableSymbolSharedPtr, bool> DoExp(KTreeNode *node);
-    std::vector<VariableSymbolSharedPtr> DoArgs(KTreeNode *node);
+    std::vector<VariableSymbolSharedPtr> DoExtDecList(const KTreeNode *node);
+    VariableSymbolSharedPtr DoSpecifier(const KTreeNode *node);
+    std::shared_ptr<StructSymbol> DoStructSpecifier(const KTreeNode *node);
+    std::vector<VariableSymbolSharedPtr> DoDefList(const KTreeNode *node);
+    std::vector<VariableSymbolSharedPtr> DoDef(const KTreeNode *node);
+    std::vector<VariableSymbolSharedPtr> DoDecList(const KTreeNode *node);
+    VariableSymbolSharedPtr DoDec(const KTreeNode *node);
+    VariableSymbolSharedPtr DoVarDec(const KTreeNode *node);
+    std::shared_ptr<FunctionSymbol> DoFunDec(const KTreeNode *node);
+    std::vector<VariableSymbolSharedPtr> DoVarList(const KTreeNode *node);
+    VariableSymbolSharedPtr DoParamDec(const KTreeNode *node);
+    std::pair<VariableSymbolSharedPtr, bool> DoExp(const KTreeNode *node);
+    std::vector<VariableSymbolSharedPtr> DoArgs(const KTreeNode *node);
 };

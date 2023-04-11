@@ -185,7 +185,7 @@ bool SemanticAnalyser::IsStructAssignmentValid(
     return true;
 }
 
-void SemanticAnalyser::DoExtDefList(KTreeNode *node)
+void SemanticAnalyser::DoExtDefList(const KTreeNode *node)
 {
     // ExtDefList: ExtDef ExtDefList
     while (node != NULL)
@@ -197,7 +197,7 @@ void SemanticAnalyser::DoExtDefList(KTreeNode *node)
 
 // [CHECKS] kErrorDuplicateVariableName,
 //          kErrorDuplicateFunctionName
-void SemanticAnalyser::DoExtDef(KTreeNode *node)
+void SemanticAnalyser::DoExtDef(const KTreeNode *node)
 {
     // ExtDef: Specifier SEMICOLON
     if (node->l_child->r_sibling->value->is_token)
@@ -377,7 +377,7 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDecListDefCommon(
 }
 
 // Returns a list of DoVarDec results.
-std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoExtDecList(KTreeNode *node)
+std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoExtDecList(const KTreeNode *node)
 {
     // DecList: Dec | Dec COMMA DecList
     std::vector<VariableSymbolSharedPtr> decs;
@@ -393,7 +393,7 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoExtDecList(KTreeNode *n
 
 // Return value contains type info.
 // Returns either an ArithmeticSymbol or a StructSymbol.
-VariableSymbolSharedPtr SemanticAnalyser::DoSpecifier(KTreeNode *node)
+VariableSymbolSharedPtr SemanticAnalyser::DoSpecifier(const KTreeNode *node)
 {
     // Specifier: TYPE_INT | TYPE_FLOAT
     if (node->l_child->value->is_token)
@@ -423,7 +423,7 @@ VariableSymbolSharedPtr SemanticAnalyser::DoSpecifier(KTreeNode *node)
 // For named struct, check the existence of the def and
 // return a StructSymbol.
 // Return value contains struct name.
-std::shared_ptr<StructSymbol> SemanticAnalyser::DoStructSpecifier(KTreeNode *node)
+std::shared_ptr<StructSymbol> SemanticAnalyser::DoStructSpecifier(const KTreeNode *node)
 {
     std::string struct_name;
 
@@ -527,7 +527,7 @@ std::shared_ptr<StructSymbol> SemanticAnalyser::DoStructSpecifier(KTreeNode *nod
 }
 
 // Return a list of symbol definitions, each of which contains full symbol information.
-std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDefList(KTreeNode *node)
+std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDefList(const KTreeNode *node)
 {
     // DefList: Def DefList
     std::vector<VariableSymbolSharedPtr> defs;
@@ -544,7 +544,7 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDefList(KTreeNode *node
 // Return a list of symbol definitions, each of which contains full symbol information.
 // Type info is obtained by DoSpecifier, which is combined with each element
 // in the list returned by DoDecList with help of DoDecListDefCommon.
-std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDef(KTreeNode *node)
+std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDef(const KTreeNode *node)
 {
     // Def: Specifier DecList SEMICOLON
     auto specifier = DoSpecifier(node->l_child);
@@ -554,7 +554,7 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDef(KTreeNode *node)
 }
 
 // Returns a list of DoDec results.
-std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDecList(KTreeNode *node)
+std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDecList(const KTreeNode *node)
 {
     // DecList: Dec | Dec COMMA DecList
     std::vector<VariableSymbolSharedPtr> decs;
@@ -569,7 +569,7 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDecList(KTreeNode *node
 }
 
 // Return value contains variable name, is variable/array, initialization info.
-VariableSymbolSharedPtr SemanticAnalyser::DoDec(KTreeNode *node)
+VariableSymbolSharedPtr SemanticAnalyser::DoDec(const KTreeNode *node)
 {
     // Dec: VarDec | VarDec ASSIGN Exp
     auto var_dec = DoVarDec(node->l_child);
@@ -597,7 +597,7 @@ VariableSymbolSharedPtr SemanticAnalyser::DoDec(KTreeNode *node)
 // Return value contains variable name and whether is array.
 // Returns either an UNKNOWN VariableSymbol containing name
 // or an ArraySymbol with name and element symbol.
-VariableSymbolSharedPtr SemanticAnalyser::DoVarDec(KTreeNode *node)
+VariableSymbolSharedPtr SemanticAnalyser::DoVarDec(const KTreeNode *node)
 {
     // VarDec: ID
     if (node->l_child->value->is_token &&
@@ -634,7 +634,7 @@ VariableSymbolSharedPtr SemanticAnalyser::DoVarDec(KTreeNode *node)
 //          kErrorAssignToRValue,
 //          kErrorAssignTypeMismatch,
 // Returns <exp-type, is-l-value>.
-std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(KTreeNode *node)
+std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode *node)
 {
     const std::pair<VariableSymbolSharedPtr, bool> kNullptrFalse = {nullptr, false};
 
@@ -1019,7 +1019,7 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(KTreeNode *node
 }
 
 // Returns a list of DoExp results.
-std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoArgs(KTreeNode *node)
+std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoArgs(const KTreeNode *node)
 {
     std::vector<VariableSymbolSharedPtr> args;
 
