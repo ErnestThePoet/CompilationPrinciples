@@ -68,7 +68,7 @@ void yyerror(const char* msg){
 %type <k_tree_node> VarList
 %type <k_tree_node> CompSt
 %type <k_tree_node> StmtList Stmt
-%type <k_tree_node> Exp
+%type <k_tree_node> Exp Args
 %type <k_tree_node> OptTag Tag
 
 %right ASSIGN
@@ -168,11 +168,16 @@ Exp: Exp ASSIGN Exp {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_EXP, 3, $1, $2, $3);}
     | SUB Exp {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_EXP, 2, $1, $2);}
     | NOT Exp {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_EXP, 2, $1, $2);}
     | ID L_BRACKET R_BRACKET {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_EXP, 3, $1, $2, $3);}
+    | ID L_BRACKET Args R_BRACKET {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_EXP, 4, $1, $2, $3, $4);}
     | Exp L_SQUARE Exp R_SQUARE {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_EXP, 4, $1, $2, $3, $4);}
     | Exp DOT ID {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_EXP, 3, $1, $2, $3);}
     | ID {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_EXP, 1, $1);}
     | LITERAL_INT {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_EXP, 1, $1);}
     | LITERAL_FP {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_EXP, 1, $1);}
+    ; 
+
+Args: Exp COMMA Args {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_ARGS, 3, $1, $2, $3);}
+    | Exp {CREATE_VARIABLE_NODE(@$,$$,VARIABLE_ARGS, 1, $1);}
     ; 
 
 %%

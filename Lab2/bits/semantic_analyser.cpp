@@ -1,6 +1,6 @@
 #include "semantic_analyser.h"
 
-void SemanticAnalyser::Build(KTreeNode *node, size_t, void *)
+void SemanticAnalyser::Analyse(KTreeNode *node, size_t, void *)
 {
     if (!node->value->is_token && node->value->ast_node_value.variable->type == VARIABLE_EXT_DEF_LIST)
     {
@@ -220,6 +220,8 @@ void SemanticAnalyser::DoExtDef(KTreeNode *node)
 // [COMBINATION] Combines specifier and dec_list
 // [CHECKS] kErrorAssignTypeMismatch,
 //          kErrorUndefinedStruct
+// Return a list of symbol definitions, each of which contains full symbol information.
+// Type info in specifier is combined with each element in dec_list.
 std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDecListDefCommon(
     const VariableSymbolSharedPtr &specifier,
     const std::vector<VariableSymbolSharedPtr> &dec_list)
@@ -342,6 +344,7 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDecListDefCommon(
     return defs;
 }
 
+// Returns a list of DoVarDec results.
 std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoExtDecList(KTreeNode *node)
 {
     // DecList: Dec | Dec COMMA DecList
@@ -360,8 +363,8 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoExtDecList(KTreeNode *n
     return decs;
 }
 
-// Return value is used to provide type info
-// Returns either an ArithmeticSymbol or a StructSymbol
+// Return value contains type info.
+// Returns either an ArithmeticSymbol or a StructSymbol.
 VariableSymbolSharedPtr SemanticAnalyser::DoSpecifier(KTreeNode *node)
 {
     // Specifier: TYPE_INT | TYPE_FLOAT
@@ -391,6 +394,7 @@ VariableSymbolSharedPtr SemanticAnalyser::DoSpecifier(KTreeNode *node)
 // add the def to symtable and return a StructSymbol.
 // For named struct, check the existence of the def and
 // return a StructSymbol.
+// Return value contains struct name.
 std::shared_ptr<StructSymbol> SemanticAnalyser::DoStructSpecifier(KTreeNode *node)
 {
     std::string struct_name;
@@ -484,6 +488,7 @@ std::shared_ptr<StructSymbol> SemanticAnalyser::DoStructSpecifier(KTreeNode *nod
     }
 }
 
+// Return a list of symbol definitions, each of which contains full symbol information.
 std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDefList(KTreeNode *node)
 {
     // DefList: Def DefList
@@ -498,6 +503,9 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDefList(KTreeNode *node
     return defs;
 }
 
+// Return a list of symbol definitions, each of which contains full symbol information.
+// Type info is obtained by DoSpecifier, which is combined with each element
+// in the list returned by DoDecList with help of DoDecListDefCommon.
 std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDef(KTreeNode *node)
 {
     // Def: Specifier DecList SEMICOLON
@@ -507,6 +515,7 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDef(KTreeNode *node)
     return DoDecListDefCommon(specifier, dec_list);
 }
 
+// Returns a list of DoDec results.
 std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDecList(KTreeNode *node)
 {
     // DecList: Dec | Dec COMMA DecList
@@ -525,6 +534,7 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDecList(KTreeNode *node
     return decs;
 }
 
+// Return value contains variable name, is variable/array, initialization info.
 VariableSymbolSharedPtr SemanticAnalyser::DoDec(KTreeNode *node)
 {
     // Dec: VarDec | VarDec ASSIGN Exp
@@ -550,8 +560,9 @@ VariableSymbolSharedPtr SemanticAnalyser::DoDec(KTreeNode *node)
         initial_value);
 }
 
+// Return value contains variable name and whether is array.
 // Returns either an UNKNOWN VariableSymbol containing name
-// or an ArraySymbol with name and element symbol
+// or an ArraySymbol with name and element symbol.
 VariableSymbolSharedPtr SemanticAnalyser::DoVarDec(KTreeNode *node)
 {
     // VarDec: ID
@@ -577,19 +588,78 @@ VariableSymbolSharedPtr SemanticAnalyser::DoVarDec(KTreeNode *node)
 // [CHECKS] kErrorUndefinedVariable,
 //          kErrorDuplicateStructFieldName,
 //          kErrorStructFieldInitialized
+// Return value contains exp type.
 VariableSymbolSharedPtr SemanticAnalyser::DoExp(KTreeNode *node)
 {
     // Exp: ID | LITERAL_INT | LITERAL_FP
     if (node->l_child->value->is_token &&
         node->l_child->r_sibling == NULL)
     {
-        // ID
-        if (node->l_child->value->ast_node_value.token->type == TOKEN_ID)
+        switch (node->l_child->value->ast_node_value.token->type)
         {
-            if (symbol_table_.contains(node->l_child->value->ast_node_value.token->value))
+        case TOKEN_ID:
+        {
+            std::string variable_name = node->l_child->value->ast_node_value.token->value;
+            if (symbol_table_.contains(variable_name))
             {
-                return symbol_table_[node->l_child->value->ast_node_value.token->value];
+                return symbol_table_[variable_name];
+            }
+            else
+            {
+                PrintError(kErrorUndefinedVariable,
+                           GetLineNumber(node->l_child),
+                           "Undefined variable '" + variable_name + '\'');
+                return nullptr;
             }
         }
+        case TOKEN_LITERAL_INT:
+        {
+            return std::make_shared<ArithmeticSymbol>(
+                GetLineNumber(node->l_child),
+                "",
+                ArithmeticSymbolType::INT);
+        }
+        case TOKEN_LITERAL_FP:
+        {
+            return std::make_shared<ArithmeticSymbol>(
+                GetLineNumber(node->l_child),
+                "",
+                ArithmeticSymbolType::FLOAT);
+        }
+        default:
+            return nullptr;
+        }
+    }
+
+    // Exp: ID L_BRACKET R_BRACKET
+    if (node->l_child->value->is_token &&
+        node->l_child->value->ast_node_value.token->type == TOKEN_ID &&
+        node->l_child->r_sibling != NULL &&
+        node->l_child->r_sibling->value->is_token &&
+        node->l_child->r_sibling->value->ast_node_value.token->type == TOKEN_DELIMITER_L_BRACKET)
+    {
+        std::string function_name = node->l_child->value->ast_node_value.token->value;
+        // No such callee symbol
+        if (!symbol_table_.contains(function_name))
+        {
+            PrintError(kErrorUndefinedFunction,
+                       GetLineNumber(node->l_child),
+                       "Cannot find function '" + function_name + '\'');
+
+            return nullptr;
+        }
+
+        auto function_symbol = symbol_table_[function_name];
+        // is not a function
+        if (function_symbol->VariableSymbolType() != VariableSymbolType::FUNCTION)
+        {
+            PrintError(kErrorInvalidInvokeOperator,
+                       GetLineNumber(node->l_child->r_sibling),
+                       "A(n) '" + GetSymbolTypeName(symbol_table_[function_name]) + "' variable is not callable");
+
+            return nullptr;
+        }
+
+        return static_cast<FunctionSymbol *>(function_symbol.get())->ReturnType();
     }
 }

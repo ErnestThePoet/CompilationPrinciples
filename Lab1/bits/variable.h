@@ -30,6 +30,7 @@
 #define VARIABLE_DEC_LIST 17
 #define VARIABLE_DEC 18
 #define VARIABLE_EXP 19
+#define VARIABLE_ARGS 20
 
 typedef struct
 {

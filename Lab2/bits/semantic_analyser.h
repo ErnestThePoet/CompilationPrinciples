@@ -52,7 +52,7 @@ private:
 
 public:
     SemanticAnalyser() : has_semantic_error_(false), mt19937_(random_device_()) {}
-    void Build(KTreeNode *node, size_t, void *);
+    void Analyse(KTreeNode *node, size_t, void *);
 
     bool HasSemanticError() const
     {
