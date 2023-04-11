@@ -382,7 +382,7 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoExtDecList(const KTreeN
     // DecList: Dec | Dec COMMA DecList
     std::vector<VariableSymbolSharedPtr> decs;
 
-    while (node->r_child != NULL)
+    while (node != NULL)
     {
         decs.push_back(DoVarDec(node->l_child));
         node = node->r_child;
@@ -559,7 +559,7 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDecList(const KTreeNode
     // DecList: Dec | Dec COMMA DecList
     std::vector<VariableSymbolSharedPtr> decs;
 
-    while (node->r_child != NULL)
+    while (node != NULL)
     {
         decs.push_back(DoDec(node->l_child));
         node = node->r_child;
@@ -621,6 +621,32 @@ VariableSymbolSharedPtr SemanticAnalyser::DoVarDec(const KTreeNode *node)
         array_element->Name(),
         array_element,
         std::stoull(node->l_child->r_sibling->r_sibling->value->ast_node_value.token->value));
+}
+
+std::shared_ptr<FunctionSymbol> SemanticAnalyser::DoFunDec(const KTreeNode *node)
+{
+}
+std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoVarList(const KTreeNode *node)
+{
+    std::vector<VariableSymbolSharedPtr> vars;
+
+    while (node != NULL)
+    {
+        vars.push_back(DoParamDec(node->l_child));
+        node = node->r_child;
+    }
+
+    return vars;
+}
+
+// Return a param declaration containing full symbol information.
+VariableSymbolSharedPtr SemanticAnalyser::DoParamDec(const KTreeNode *node)
+{
+    // ParamDec: Specifier VarDec
+    auto specifier = DoSpecifier(node->l_child);
+    auto var_dec = DoVarDec(node->r_child);
+
+    return DoDecListDefCommon(specifier, {var_dec})[0];
 }
 
 // [CHECKS] kErrorUndefinedVariable,
@@ -1023,7 +1049,7 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoArgs(const KTreeNode *n
 {
     std::vector<VariableSymbolSharedPtr> args;
 
-    while (node->r_child != NULL)
+    while (node != NULL)
     {
         args.push_back(DoExp(node->l_child).first);
         node = node->r_child;
