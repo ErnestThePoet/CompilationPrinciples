@@ -8,6 +8,9 @@
 
 typedef AstNode *KTreeNodeValue;
 
+// When a node has no child, both l_child and r_child will be NULL.
+// When a node has only one child, l_child will point to the child and r_child will be NULL.
+// When a node has more than one child, both l_child and r_child are not NULL.
 typedef struct KTreeNode_
 {
     KTreeNodeValue value;
