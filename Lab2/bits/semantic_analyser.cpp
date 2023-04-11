@@ -15,11 +15,13 @@ int SemanticAnalyser::GetLineNumber(const KTreeNode *node) const
                : node->value->ast_node_value.variable->line_start;
 }
 
+// symbol cannot be nullptr
 std::string SemanticAnalyser::GetSymbolTypeName(const VariableSymbolSharedPtr &symbol) const
 {
     return GetSymbolTypeName(symbol.get());
 }
 
+// symbol cannot be nullptr
 std::string SemanticAnalyser::GetSymbolTypeName(const VariableSymbol *symbol) const
 {
     const VariableSymbol *variable_symbol = static_cast<const VariableSymbol *>(symbol);
@@ -189,6 +191,10 @@ void SemanticAnalyser::DoExtDef(KTreeNode *node)
     }
 
     auto specifier = DoSpecifier(node->l_child);
+    if (specifier == nullptr)
+    {
+        return;
+    }
 
     // ExtDef: Specifier ExtDecList SEMICOLON
     if (node->l_child->r_sibling->value->ast_node_value.variable->type == VARIABLE_EXT_DEC_LIST)
@@ -199,6 +205,11 @@ void SemanticAnalyser::DoExtDef(KTreeNode *node)
 
         for (auto &def : defs)
         {
+            if (def == nullptr)
+            {
+                continue;
+            }
+
             if (symbol_table_.contains(def->Name()))
             {
                 PrintError(kErrorDuplicateVariableName,
@@ -228,9 +239,18 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDecListDefCommon(
 {
     std::vector<VariableSymbolSharedPtr> defs;
 
+    if (specifier == nullptr)
+    {
+        return defs;
+    }
+
     for (auto &dec : dec_list)
     {
-        if (dec->VariableSymbolType() == VariableSymbolType::UNKNOWN)
+        if (dec == nullptr)
+        {
+            defs.push_back(nullptr);
+        }
+        else if (dec->VariableSymbolType() == VariableSymbolType::UNKNOWN)
         {
             // Arithmetic
             if (specifier->VariableSymbolType() == VariableSymbolType::ARITHMETIC)
@@ -352,11 +372,7 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoExtDecList(KTreeNode *n
 
     while (node->l_child->r_sibling != NULL)
     {
-        auto dec = DoVarDec(node->l_child);
-        if (dec != nullptr)
-        {
-            decs.push_back(dec);
-        }
+        decs.push_back(DoVarDec(node->l_child));
         node = node->l_child->r_sibling->r_sibling;
     }
 
@@ -455,6 +471,11 @@ std::shared_ptr<StructSymbol> SemanticAnalyser::DoStructSpecifier(KTreeNode *nod
         std::unordered_set<std::string> field_names;
         for (auto &field : fields)
         {
+            if (field == nullptr)
+            {
+                continue;
+            }
+
             if (field_names.contains(field->Name()))
             {
                 PrintError(kErrorDuplicateStructFieldName,
@@ -471,6 +492,11 @@ std::shared_ptr<StructSymbol> SemanticAnalyser::DoStructSpecifier(KTreeNode *nod
         // Checks kErrorStructFieldInitialized
         for (auto &field : fields)
         {
+            if (field == nullptr)
+            {
+                continue;
+            }
+
             if (field->IsInitialized())
             {
                 PrintError(kErrorStructFieldInitialized,
@@ -523,11 +549,7 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDecList(KTreeNode *node
 
     while (node->l_child->r_sibling != NULL)
     {
-        auto dec = DoDec(node->l_child);
-        if (dec != nullptr)
-        {
-            decs.push_back(dec);
-        }
+        decs.push_back(DoDec(node->l_child));
         node = node->l_child->r_sibling->r_sibling;
     }
 
@@ -577,6 +599,10 @@ VariableSymbolSharedPtr SemanticAnalyser::DoVarDec(KTreeNode *node)
 
     // VarDec: VarDec L_SQUARE LITERAL_INT R_SQUARE
     auto array_element = DoVarDec(node->l_child);
+    if (array_element == nullptr)
+    {
+        return nullptr;
+    }
 
     return std::make_shared<ArraySymbol>(
         array_element->LineNumber(),
@@ -631,7 +657,7 @@ VariableSymbolSharedPtr SemanticAnalyser::DoExp(KTreeNode *node)
         }
     }
 
-    // Exp: ID L_BRACKET R_BRACKET
+    // Exp: ID L_BRACKET R_BRACKET | ID L_BRACKET Args R_BRACKET
     if (node->l_child->value->is_token &&
         node->l_child->value->ast_node_value.token->type == TOKEN_ID &&
         node->l_child->r_sibling != NULL &&
@@ -659,6 +685,8 @@ VariableSymbolSharedPtr SemanticAnalyser::DoExp(KTreeNode *node)
 
             return nullptr;
         }
+
+        // Check args
 
         return static_cast<FunctionSymbol *>(function_symbol.get())->ReturnType();
     }

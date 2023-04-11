@@ -34,6 +34,7 @@ public:
         return is_initialized_;
     }
 
+    // If is initialized, initial value is not nullptr
     VariableSymbolSharedPtr InitialValue() const
     {
         return initial_value_;

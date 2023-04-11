@@ -88,7 +88,7 @@ private:
 
     // Please combine the actual syntax in .y file to fully understand each method
     // Contract: Functions that return a single ptr may return nullptr.
-    //           Functions that return a vector of ptr will ensure no nullptr is in that vector.
+    //           Functions that return a vector of ptr also preserve nullptr in that vector.
     void DoExtDefList(KTreeNode *node);
     void DoExtDef(KTreeNode *node);
     std::vector<VariableSymbolSharedPtr> DoDecListDefCommon(
@@ -103,4 +103,5 @@ private:
     VariableSymbolSharedPtr DoDec(KTreeNode *node);
     VariableSymbolSharedPtr DoVarDec(KTreeNode *node);
     VariableSymbolSharedPtr DoExp(KTreeNode *node);
+    std::vector<VariableSymbolSharedPtr> DoArgs(KTreeNode *node);
 };
