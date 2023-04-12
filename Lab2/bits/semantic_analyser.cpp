@@ -15,7 +15,7 @@ void SemanticAnalyser::PrintSymbolTable() const
     constexpr int kLineNumberWidth = 15;
     constexpr int kIsInitializedWidth = 15;
     const std::string kHorizontalLine = std::string(
-        kNameWidth + kTypeWidth + kLineNumberWidth + kIsInitializedWidth + 4, '-');
+        kNameWidth + kTypeWidth + kLineNumberWidth + kIsInitializedWidth + 5, '-');
 
     auto PrintLine = [=](const std::string &name,
                          const std::string &type,
@@ -34,8 +34,15 @@ void SemanticAnalyser::PrintSymbolTable() const
                   << std::endl;
     };
 
-    std::cout << std::left;
     std::cout << "[Symbol Table]" << std::endl;
+
+    if (symbol_table_.size() == 0)
+    {
+        std::cout << "--Empty--" << std::endl;
+        return;
+    }
+
+    std::cout << std::left;
     std::cout << kHorizontalLine << std::endl;
     PrintLine("Name", "Type", "Line Number", "Initialized");
     std::cout << kHorizontalLine << std::endl;
@@ -58,10 +65,17 @@ void SemanticAnalyser::PrintStructDefSymbolTable() const
     constexpr int kFieldNameWidth = 20;
     constexpr int kFieldTypeWidth = 20;
 
-    const std::string kHorizontalLine = std::string(50, '-');
+    const std::string kHorizontalLine = std::string(60, '-');
+
+    std::cout << "[Struct Definition Table]" << std::endl;
+
+    if (struct_def_symbol_table_.size() == 0)
+    {
+        std::cout << "--Empty--" << std::endl;
+        return;
+    }
 
     std::cout << std::left;
-    std::cout << "[Struct Definition Table]" << std::endl;
     std::cout << kHorizontalLine << std::endl;
 
     for (auto &symbol : struct_def_symbol_table_)
