@@ -10,9 +10,13 @@
 #include <utility>
 #include <random>
 #include <algorithm>
-#include "../../Lab1/bits/k_tree.h"
-#include "../../Lab1/bits/token.h"
-#include "../../Lab1/bits/variable.h"
+
+extern "C"{
+    #include "../../Lab1/bits/k_tree.h"
+    #include "../../Lab1/bits/token.h"
+    #include "../../Lab1/bits/variable.h"
+}
+
 #include "./symbols/variable_symbol.h"
 #include "./symbols/arithmetic_symbol.h"
 #include "./symbols/array_symbol.h"
@@ -20,7 +24,7 @@
 #include "./symbols/struct_symbol.h"
 #include "./symbols/struct_def_symbol.h"
 
-using SymbolTable = std::unordered_map<std::string, VariableSymbolSharedPtr>;
+    using SymbolTable = std::unordered_map<std::string, VariableSymbolSharedPtr>;
 using StructDefSymbolTable = std::unordered_map<std::string, StructDefSymbolSharedPtr>;
 
 class SemanticAnalyser

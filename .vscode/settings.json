@@ -9,7 +9,8 @@
         "k_tree.h": "c",
         "ast_node.h": "c",
         "execinfo.h": "c",
-        "defs.h": "c"
+        "defs.h": "c",
+        "algorithm": "cpp"
     },
     "cmake.sourceDirectory": "${workspaceFolder}/Lab1"
 }

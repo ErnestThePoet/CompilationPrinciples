@@ -1,9 +1,13 @@
 #include <cstdio>
 
-#include "../Lab1/bits/defs.h"
-#include "../Lab1/bits/token.h"
-#include "../Lab1/bits/ast_node.h"
-#include "../Lab1/bits/k_tree.h"
+extern "C"{
+    #include "../Lab1/bits/defs.h"
+    #include "../Lab1/bits/token.h"
+    #include "../Lab1/bits/ast_node.h"
+    #include "../Lab1/bits/k_tree.h"
+    #include "../Lab1/generated/lex_analyser.h"
+    #include "../Lab1/generated/parser.h"
+}
 
 #include "./bits/semantic_analyser.h"
 
@@ -11,9 +15,6 @@ KTreeNode *kRoot = NULL;
 bool kHasLexicalError = false;
 bool kHasSyntaxError = false;
 SemanticAnalyser kSemanticAnalyser;
-
-extern int yyparse(void);
-extern void yyrestart(FILE *input_file);
 
 void FreeKTreeNode(KTreeNodeValue *node)
 {
