@@ -8,6 +8,74 @@ void SemanticAnalyser::Analyse(KTreeNode *node, size_t, void *)
     }
 }
 
+void SemanticAnalyser::PrintSymbolTable() const
+{
+    constexpr int kNameWidth = 20;
+    constexpr int kTypeWidth = 20;
+    constexpr int kLineNumberWidth = 15;
+    constexpr int kIsInitializedWidth = 15;
+    const std::string kHorizontalLine = std::string(
+        kNameWidth + kTypeWidth + kLineNumberWidth + kIsInitializedWidth + 4, '-');
+
+    auto PrintLine = [=](const std::string &name,
+                         const std::string &type,
+                         const std::string &line_number,
+                         const std::string &is_initialized)
+    {
+        std::cout << std::setw(0) << '|'
+                  << std::setw(kNameWidth) << name
+                  << std::setw(0) << '|'
+                  << std::setw(kTypeWidth) << type
+                  << std::setw(0) << '|'
+                  << std::setw(kLineNumberWidth) << line_number
+                  << std::setw(0) << '|'
+                  << std::setw(kIsInitializedWidth) << is_initialized
+                  << std::setw(0)
+                  << std::endl;
+    };
+
+    std::cout << "[Symbol Table]" << std::endl;
+    std::cout << kHorizontalLine << std::endl;
+    PrintLine("Name", "Type", "Line Number", "Initialized");
+    std::cout << kHorizontalLine << std::endl;
+
+    for (auto &symbol : symbol_table_)
+    {
+        PrintLine(symbol.first,
+                  GetVariableSymbolTypeName(symbol.second),
+                  std::to_string(symbol.second->LineNumber()),
+                  symbol.second->IsInitialized() ? "Yes" : "No");
+
+        std::cout << kHorizontalLine << std::endl;
+    }
+}
+
+void SemanticAnalyser::PrintStructDefSymbolTable() const
+{
+    constexpr int kFieldNameWidth = 20;
+    constexpr int kFieldTypeWidth = 20;
+
+    const std::string kHorizontalLine = std::string(50, '-');
+    std::cout << "[Struct Definition Table]" << std::endl;
+    std::cout << kHorizontalLine << std::endl;
+
+    for (auto &symbol : struct_def_symbol_table_)
+    {
+        std::cout << "struct " << symbol.first << std::endl;
+        std::cout << std::string(4, ' ') << "Line Number: " << symbol.second->LineNumber() << std::endl;
+        std::cout << std::string(4, ' ') << "Fields:" << std::endl;
+        for (auto &field : symbol.second->Fields())
+        {
+            std::cout << std::string(8, ' ')
+                      << std::setw(kFieldNameWidth) << field->Name()
+                      << std::setw(kFieldTypeWidth) << GetVariableSymbolTypeName(field)
+                      << std::setw(0)
+                      << std::endl;
+        }
+        std::cout << kHorizontalLine << std::endl;
+    }
+}
+
 int SemanticAnalyser::GetKTreeNodeLineNumber(const KTreeNode *node) const
 {
     return node->value->is_token
@@ -36,7 +104,7 @@ std::string SemanticAnalyser::GetVariableSymbolTypeName(const VariableSymbol *sy
             return "float";
         case ArithmeticSymbolType::UNKNOWN:
         default:
-            return "<UNKNOWN ARITHMETIC>";
+            return "<UNKNOWN ARITHMETIC TYPE>";
         }
 
     case VariableSymbolType::ARRAY:
@@ -62,7 +130,7 @@ std::string SemanticAnalyser::GetVariableSymbolTypeName(const VariableSymbol *sy
 
     case VariableSymbolType::UNKNOWN:
     default:
-        return "<UNKNOWN VARIABLE>";
+        return "<UNKNOWN VARIABLE TYPE>";
     }
 }
 

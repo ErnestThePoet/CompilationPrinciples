@@ -9,12 +9,12 @@
 #include "../../Lab1/bits/ast_node.h"
 #include "../../Lab1/bits/k_tree.h"
 
-#include "./symbols/symbol.h"
+#include "./semantic_analyser.h"
 
 KTreeNode *kRoot = NULL;
 bool kHasLexicalError = false;
 bool kHasSyntaxError = false;
-bool kHasSemanticError = false;
+SemanticAnalyser kSemanticAnalyser;
 
 extern int yyparse(void);
 extern void yyrestart(FILE *input_file);
@@ -24,11 +24,16 @@ void FreeKTreeNode(KTreeNodeValue *node)
     AstNodeFree(*node);
 }
 
+void SemanticAnalyse(KTreeNode *root, size_t current_level, void *user_arg)
+{
+    kSemanticAnalyser.Analyse(root, current_level, user_arg);
+}
+
 int main(int argc, char *argv[])
 {
     if (argc != 3)
     {
-        std::cerr<<"Usage: parser <input-file> <output-file>\n";
+        std::cerr << "Usage: parser <input-file> <output-file>\n";
         return FAILURE;
     }
 
@@ -50,7 +55,13 @@ int main(int argc, char *argv[])
         return FAILURE;
     }
 
-    
+    KTreePreOrderTraverse(kRoot, SemanticAnalyse, NULL);
+
+    if (!kSemanticAnalyser.HasSemanticError())
+    {
+        kSemanticAnalyser.PrintStructDefSymbolTable();
+        kSemanticAnalyser.PrintSymbolTable();
+    }
 
     FreeKTree(kRoot, FreeKTreeNode);
 

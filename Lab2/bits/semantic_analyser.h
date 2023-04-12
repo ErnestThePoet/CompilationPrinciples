@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 #include <string>
 #include <unordered_map>
@@ -54,6 +55,9 @@ private:
 public:
     SemanticAnalyser() : has_semantic_error_(false), mt19937_(random_device_()) {}
     void Analyse(KTreeNode *node, size_t, void *);
+
+    void PrintSymbolTable() const;
+    void PrintStructDefSymbolTable() const;
 
     bool HasSemanticError() const
     {
