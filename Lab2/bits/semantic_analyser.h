@@ -64,6 +64,9 @@ public:
                          mt19937_(random_device_()) {}
     void Analyse(KTreeNode *node, size_t, void *);
 
+    // Debug only
+    void PrintKTreeNodeInfo(const KTreeNode *node) const;
+
     void PrintSymbolTable() const;
     void PrintStructDefSymbolTable() const;
 

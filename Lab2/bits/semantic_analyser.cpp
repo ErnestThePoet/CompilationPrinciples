@@ -14,6 +14,18 @@ void SemanticAnalyser::Analyse(KTreeNode *node, size_t, void *)
     }
 }
 
+void SemanticAnalyser::PrintKTreeNodeInfo(const KTreeNode *node) const
+{
+    if (node->value->is_token)
+    {
+        std::cout << "Token, type=" << (node->value->ast_node_value.token->type) << std::endl;
+    }
+    else
+    {
+        std::cout << "Variable, type=" << (node->value->ast_node_value.variable->type) << std::endl;
+    }
+}
+
 void SemanticAnalyser::PrintSymbolTable() const
 {
     constexpr int kNameWidth = 20;
@@ -297,9 +309,10 @@ bool SemanticAnalyser::InsertVariableSymbol(const VariableSymbolSharedPtr &symbo
                        ? kErrorDuplicateFunctionName
                        : kErrorDuplicateVariableName,
                    symbol->GetLineNumber(),
-                   symbol->GetVariableSymbolType() == VariableSymbolType::FUNCTION
-                       ? "Duplicate function name: '"
-                       : "Duplicate variable name: '" + symbol->GetName() + '\'');
+                   (symbol->GetVariableSymbolType() == VariableSymbolType::FUNCTION
+                        ? "Duplicate function name: '"
+                        : "Duplicate variable name: '") +
+                       symbol->GetName() + '\'');
 
         return false;
     }
@@ -882,7 +895,7 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoCompSt(const KTreeNode 
             // StmtList is not NULL either
             if (!node->l_child->r_sibling->r_sibling->value->is_token)
             {
-                return DoStmtList(node->l_child->r_sibling);
+                return DoStmtList(node->l_child->r_sibling->r_sibling);
             }
             // StmtList is NULL
             else
