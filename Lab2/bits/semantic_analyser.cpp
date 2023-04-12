@@ -30,10 +30,11 @@ void SemanticAnalyser::PrintSymbolTable() const
                   << std::setw(kLineNumberWidth) << line_number
                   << std::setw(0) << '|'
                   << std::setw(kIsInitializedWidth) << is_initialized
-                  << std::setw(0)
+                  << std::setw(0) << '|'
                   << std::endl;
     };
 
+    std::cout << std::left;
     std::cout << "[Symbol Table]" << std::endl;
     std::cout << kHorizontalLine << std::endl;
     PrintLine("Name", "Type", "Line Number", "Initialized");
@@ -48,6 +49,8 @@ void SemanticAnalyser::PrintSymbolTable() const
 
         std::cout << kHorizontalLine << std::endl;
     }
+
+    std::cout << std::right;
 }
 
 void SemanticAnalyser::PrintStructDefSymbolTable() const
@@ -56,6 +59,8 @@ void SemanticAnalyser::PrintStructDefSymbolTable() const
     constexpr int kFieldTypeWidth = 20;
 
     const std::string kHorizontalLine = std::string(50, '-');
+
+    std::cout << std::left;
     std::cout << "[Struct Definition Table]" << std::endl;
     std::cout << kHorizontalLine << std::endl;
 
@@ -74,6 +79,8 @@ void SemanticAnalyser::PrintStructDefSymbolTable() const
         }
         std::cout << kHorizontalLine << std::endl;
     }
+
+    std::cout << std::right;
 }
 
 int SemanticAnalyser::GetKTreeNodeLineNumber(const KTreeNode *node) const
