@@ -176,7 +176,7 @@ std::string SemanticAnalyser::GetVariableSymbolTypeName(const VariableSymbol *sy
 void SemanticAnalyser::PrintError(
     const int type, const int line_number, const std::string &message)
 {
-    has_semantic_error_ = true;
+    has_error_ = true;
     std::cerr << "Error type " << type << " at Line " << line_number << ": " << message << std::endl;
 }
 

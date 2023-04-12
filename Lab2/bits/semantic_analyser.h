@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <memory>
 #include <utility>
 #include <random>
 #include <algorithm>
@@ -32,7 +33,7 @@ class SemanticAnalyser
 {
 private:
     bool is_started_;
-    bool has_semantic_error_;
+    bool has_error_;
     SymbolTable symbol_table_;
     StructDefSymbolTable struct_def_symbol_table_;
     std::random_device random_device_;
@@ -60,7 +61,7 @@ private:
 
 public:
     SemanticAnalyser() : is_started_(false),
-                         has_semantic_error_(false),
+                         has_error_(false),
                          mt19937_(random_device_()) {}
     void Analyse(const KTreeNode *node);
 
@@ -70,9 +71,9 @@ public:
     void PrintSymbolTable() const;
     void PrintStructDefSymbolTable() const;
 
-    bool GetHasSemanticError() const
+    bool GetHasError() const
     {
-        return has_semantic_error_;
+        return has_error_;
     }
 
     SymbolTable GetSymbolTable() const

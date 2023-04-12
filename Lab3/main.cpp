@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
 
     KTreePreOrderTraverse(kRoot, SemanticAnalyse, NULL);
 
-    // if (!kSemanticAnalyser.GetHasSemanticError())
+    // if (!kSemanticAnalyser.GetHasError())
     // {
     //     kSemanticAnalyser.PrintStructDefSymbolTable();
     //     kSemanticAnalyser.PrintSymbolTable();
