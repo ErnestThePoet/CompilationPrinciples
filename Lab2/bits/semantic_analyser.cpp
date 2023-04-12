@@ -43,8 +43,8 @@ void SemanticAnalyser::PrintSymbolTable() const
     {
         PrintLine(symbol.first,
                   GetVariableSymbolTypeName(symbol.second),
-                  std::to_string(symbol.second->LineNumber()),
-                  symbol.second->IsInitialized() ? "Yes" : "No");
+                  std::to_string(symbol.second->GetLineNumber()),
+                  symbol.second->GetIsInitialized() ? "Yes" : "No");
 
         std::cout << kHorizontalLine << std::endl;
     }
@@ -62,12 +62,12 @@ void SemanticAnalyser::PrintStructDefSymbolTable() const
     for (auto &symbol : struct_def_symbol_table_)
     {
         std::cout << "struct " << symbol.first << std::endl;
-        std::cout << std::string(4, ' ') << "Line Number: " << symbol.second->LineNumber() << std::endl;
+        std::cout << std::string(4, ' ') << "Line Number: " << symbol.second->GetLineNumber() << std::endl;
         std::cout << std::string(4, ' ') << "Fields:" << std::endl;
-        for (auto &field : symbol.second->Fields())
+        for (auto &field : symbol.second->GetFields())
         {
             std::cout << std::string(8, ' ')
-                      << std::setw(kFieldNameWidth) << field->Name()
+                      << std::setw(kFieldNameWidth) << field->GetName()
                       << std::setw(kFieldTypeWidth) << GetVariableSymbolTypeName(field)
                       << std::setw(0)
                       << std::endl;
@@ -93,10 +93,10 @@ std::string SemanticAnalyser::GetVariableSymbolTypeName(const VariableSymbolShar
 std::string SemanticAnalyser::GetVariableSymbolTypeName(const VariableSymbol *symbol) const
 {
     const VariableSymbol *variable_symbol = static_cast<const VariableSymbol *>(symbol);
-    switch (variable_symbol->VariableSymbolType())
+    switch (variable_symbol->GetVariableSymbolType())
     {
     case VariableSymbolType::ARITHMETIC:
-        switch (static_cast<const ArithmeticSymbol *>(variable_symbol)->ArithmeticSymbolType())
+        switch (static_cast<const ArithmeticSymbol *>(variable_symbol)->GetArithmeticSymbolType())
         {
         case ArithmeticSymbolType::INT:
             return "int";
@@ -111,10 +111,10 @@ std::string SemanticAnalyser::GetVariableSymbolTypeName(const VariableSymbol *sy
     {
         std::string array_type_name;
         const ArraySymbol *array_symbol = static_cast<const ArraySymbol *>(variable_symbol);
-        while (array_symbol->VariableSymbolType() == VariableSymbolType::ARRAY)
+        while (array_symbol->GetVariableSymbolType() == VariableSymbolType::ARRAY)
         {
             array_type_name = "[]" + array_type_name;
-            array_symbol = static_cast<ArraySymbol *>(array_symbol->ElemType().get());
+            array_symbol = static_cast<ArraySymbol *>(array_symbol->GetElemType().get());
         }
 
         array_type_name = GetVariableSymbolTypeName(array_symbol) + ' ' + array_type_name;
@@ -126,7 +126,7 @@ std::string SemanticAnalyser::GetVariableSymbolTypeName(const VariableSymbol *sy
         return "function";
 
     case VariableSymbolType::STRUCT:
-        return "struct " + static_cast<const StructSymbol *>(variable_symbol)->StructName();
+        return "struct " + static_cast<const StructSymbol *>(variable_symbol)->GetStructName();
 
     case VariableSymbolType::UNKNOWN:
     default:
@@ -151,40 +151,40 @@ std::string SemanticAnalyser::GetNewAnnoyStructName()
         std::ostringstream oss;
         oss << std::hex << distribution_(mt19937_);
         new_annoy_name = annoy_name_prefix + oss.str();
-    } while (struct_def_symbol_table_.contains(new_annoy_name));
+    } while (struct_def_symbol_table_.find(new_annoy_name) != struct_def_symbol_table_.end());
 
     return new_annoy_name;
 }
 
 bool SemanticAnalyser::IsIntArithmeticSymbol(const VariableSymbol &var) const
 {
-    return var.VariableSymbolType() == VariableSymbolType::ARITHMETIC &&
-           static_cast<const ArithmeticSymbol *>(&var)->ArithmeticSymbolType() ==
+    return var.GetVariableSymbolType() == VariableSymbolType::ARITHMETIC &&
+           static_cast<const ArithmeticSymbol *>(&var)->GetArithmeticSymbolType() ==
                ArithmeticSymbolType::INT;
 }
 
 bool SemanticAnalyser::IsSameTypeArithmeticSymbol(const VariableSymbol &var1, const VariableSymbol &var2) const
 {
-    if (var1.VariableSymbolType() != VariableSymbolType::ARITHMETIC ||
-        var2.VariableSymbolType() != VariableSymbolType::ARITHMETIC)
+    if (var1.GetVariableSymbolType() != VariableSymbolType::ARITHMETIC ||
+        var2.GetVariableSymbolType() != VariableSymbolType::ARITHMETIC)
     {
         return false;
     }
 
-    return static_cast<const ArithmeticSymbol *>(&var1)->ArithmeticSymbolType() ==
-           static_cast<const ArithmeticSymbol *>(&var2)->ArithmeticSymbolType();
+    return static_cast<const ArithmeticSymbol *>(&var1)->GetArithmeticSymbolType() ==
+           static_cast<const ArithmeticSymbol *>(&var2)->GetArithmeticSymbolType();
 }
 
 bool SemanticAnalyser::IsAssignmentValid(
     const VariableSymbol &var_l,
     const VariableSymbol &var_r) const
 {
-    if (var_l.VariableSymbolType() != var_r.VariableSymbolType())
+    if (var_l.GetVariableSymbolType() != var_r.GetVariableSymbolType())
     {
         return false;
     }
 
-    switch (var_l.VariableSymbolType())
+    switch (var_l.GetVariableSymbolType())
     {
     case VariableSymbolType::ARITHMETIC:
     {
@@ -195,16 +195,16 @@ bool SemanticAnalyser::IsAssignmentValid(
         const ArraySymbol *array1 = static_cast<const ArraySymbol *>(&var_l);
         const ArraySymbol *array2 = static_cast<const ArraySymbol *>(&var_r);
 
-        while (array1->VariableSymbolType() == VariableSymbolType::ARRAY &&
-               array2->VariableSymbolType() == VariableSymbolType::ARRAY)
+        while (array1->GetVariableSymbolType() == VariableSymbolType::ARRAY &&
+               array2->GetVariableSymbolType() == VariableSymbolType::ARRAY)
         {
-            array1 = static_cast<const ArraySymbol *>(array1->ElemType().get());
-            array2 = static_cast<const ArraySymbol *>(array2->ElemType().get());
+            array1 = static_cast<const ArraySymbol *>(array1->GetElemType().get());
+            array2 = static_cast<const ArraySymbol *>(array2->GetElemType().get());
         }
 
         // different dim
-        if (array1->VariableSymbolType() == VariableSymbolType::ARRAY ||
-            array2->VariableSymbolType() == VariableSymbolType::ARRAY)
+        if (array1->GetVariableSymbolType() == VariableSymbolType::ARRAY ||
+            array2->GetVariableSymbolType() == VariableSymbolType::ARRAY)
         {
             return false;
         }
@@ -216,15 +216,15 @@ bool SemanticAnalyser::IsAssignmentValid(
         const StructSymbol *struct1 = static_cast<const StructSymbol *>(&var_l);
         const StructSymbol *struct2 = static_cast<const StructSymbol *>(&var_r);
 
-        if (!struct_def_symbol_table_.contains(struct1->StructName()) ||
-            !struct_def_symbol_table_.contains(struct2->StructName()))
+        if (struct_def_symbol_table_.find(struct1->GetStructName()) == struct_def_symbol_table_.end() ||
+            struct_def_symbol_table_.find(struct2->GetStructName()) == struct_def_symbol_table_.end())
         {
             return false;
         }
 
         return IsStructAssignmentValid(
-            *struct_def_symbol_table_.at(struct1->StructName()),
-            *struct_def_symbol_table_.at(struct2->StructName()));
+            *struct_def_symbol_table_.at(struct1->GetStructName()),
+            *struct_def_symbol_table_.at(struct2->GetStructName()));
     }
     default:
         return false;
@@ -235,8 +235,8 @@ bool SemanticAnalyser::IsStructAssignmentValid(
     const StructDefSymbol &def_l,
     const StructDefSymbol &def_r) const
 {
-    auto fields1 = def_l.Fields();
-    auto fields2 = def_r.Fields();
+    auto fields1 = def_l.GetFields();
+    auto fields2 = def_r.GetFields();
     if (fields1.size() != fields2.size())
     {
         return false;
@@ -264,21 +264,21 @@ bool SemanticAnalyser::InsertVariableSymbol(const VariableSymbolSharedPtr &symbo
         return false;
     }
 
-    if (symbol_table_.contains(symbol->Name()))
+    if (symbol_table_.find(symbol->GetName()) != symbol_table_.end())
     {
-        PrintError(symbol->VariableSymbolType() == VariableSymbolType::FUNCTION
+        PrintError(symbol->GetVariableSymbolType() == VariableSymbolType::FUNCTION
                        ? kErrorDuplicateFunctionName
                        : kErrorDuplicateVariableName,
-                   symbol->LineNumber(),
-                   symbol->VariableSymbolType() == VariableSymbolType::FUNCTION
+                   symbol->GetLineNumber(),
+                   symbol->GetVariableSymbolType() == VariableSymbolType::FUNCTION
                        ? "Duplicate function name: '"
-                       : "Duplicate variable name: '" + symbol->Name() + '\'');
+                       : "Duplicate variable name: '" + symbol->GetName() + '\'');
 
         return false;
     }
     else
     {
-        symbol_table_[symbol->Name()] = symbol;
+        symbol_table_[symbol->GetName()] = symbol;
 
         return true;
     }
@@ -339,13 +339,13 @@ void SemanticAnalyser::DoExtDef(const KTreeNode *node)
         }
 
         InsertVariableSymbol(std::make_shared<FunctionSymbol>(
-            fun_dec->LineNumber(),
-            fun_dec->Name(),
-            fun_dec->Args(),
+            fun_dec->GetLineNumber(),
+            fun_dec->GetName(),
+            fun_dec->GetArgs(),
             specifier // may be nullptr
             ));
 
-        for (auto &arg : fun_dec->Args())
+        for (auto &arg : fun_dec->GetArgs())
         {
             InsertVariableSymbol(arg);
         }
@@ -365,7 +365,7 @@ void SemanticAnalyser::DoExtDef(const KTreeNode *node)
                 if (!IsAssignmentValid(*specifier, *return_type))
                 {
                     PrintError(kErrorReturnTypeMismatch,
-                               return_type->LineNumber(),
+                               return_type->GetLineNumber(),
                                "Should return '" + GetVariableSymbolTypeName(specifier) + '\'');
 
                     // do not break
@@ -397,17 +397,17 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDecListDefCommon(
         {
             defs.push_back(nullptr);
         }
-        else if (dec->VariableSymbolType() == VariableSymbolType::UNKNOWN)
+        else if (dec->GetVariableSymbolType() == VariableSymbolType::UNKNOWN)
         {
             // Arithmetic
-            if (specifier->VariableSymbolType() == VariableSymbolType::ARITHMETIC)
+            if (specifier->GetVariableSymbolType() == VariableSymbolType::ARITHMETIC)
             {
-                if (dec->IsInitialized() &&
-                    !IsAssignmentValid(*specifier, *(dec->InitialValue())))
+                if (dec->GetIsInitialized() &&
+                    !IsAssignmentValid(*specifier, *(dec->GetInitialValue())))
                 {
                     PrintError(
                         kErrorAssignTypeMismatch,
-                        dec->LineNumber(),
+                        dec->GetLineNumber(),
                         "Cannot assign '" +
                             GetVariableSymbolTypeName(dec) +
                             "' to a variable of type '" +
@@ -417,30 +417,30 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDecListDefCommon(
                 }
 
                 defs.push_back(std::make_shared<ArithmeticSymbol>(
-                    dec->LineNumber(),
-                    dec->Name(),
-                    static_cast<ArithmeticSymbol *>(specifier.get())->ArithmeticSymbolType(),
-                    dec->IsInitialized(),
-                    dec->InitialValue()));
+                    dec->GetLineNumber(),
+                    dec->GetName(),
+                    static_cast<ArithmeticSymbol *>(specifier.get())->GetArithmeticSymbolType(),
+                    dec->GetIsInitialized(),
+                    dec->GetInitialValue()));
             }
             // Struct
             else
             {
-                std::string struct_name = static_cast<StructSymbol *>(specifier.get())->StructName();
-                if (!struct_def_symbol_table_.contains(struct_name))
+                std::string struct_name = static_cast<StructSymbol *>(specifier.get())->GetStructName();
+                if (struct_def_symbol_table_.find(struct_name) == struct_def_symbol_table_.end())
                 {
-                    PrintError(kErrorUndefinedStruct, dec->LineNumber(),
+                    PrintError(kErrorUndefinedStruct, dec->GetLineNumber(),
                                "Undefined struct type: " + GetVariableSymbolTypeName(specifier));
                     continue;
                 }
 
                 // Check assignment compatibility
-                if (dec->IsInitialized() &&
-                    !IsAssignmentValid(*specifier, *(dec->InitialValue())))
+                if (dec->GetIsInitialized() &&
+                    !IsAssignmentValid(*specifier, *(dec->GetInitialValue())))
                 {
                     PrintError(
                         kErrorAssignTypeMismatch,
-                        dec->LineNumber(),
+                        dec->GetLineNumber(),
                         "Cannot assign '" +
                             GetVariableSymbolTypeName(dec) +
                             "' to a variable of type '" +
@@ -450,49 +450,49 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDecListDefCommon(
                 }
 
                 defs.push_back(std::make_shared<StructSymbol>(
-                    dec->LineNumber(),
-                    dec->Name(),
+                    dec->GetLineNumber(),
+                    dec->GetName(),
                     struct_name,
-                    dec->IsInitialized(),
-                    dec->InitialValue()));
+                    dec->GetIsInitialized(),
+                    dec->GetInitialValue()));
             }
         }
         // array
         else
         {
             ArraySymbol *array_dec = static_cast<ArraySymbol *>(dec.get());
-            while (array_dec->ElemType()->VariableSymbolType() ==
+            while (array_dec->GetElemType()->GetVariableSymbolType() ==
                    VariableSymbolType::ARRAY)
             {
-                array_dec = static_cast<ArraySymbol *>(array_dec->ElemType().get());
+                array_dec = static_cast<ArraySymbol *>(array_dec->GetElemType().get());
             }
 
-            if (specifier->VariableSymbolType() == VariableSymbolType::ARITHMETIC)
+            if (specifier->GetVariableSymbolType() == VariableSymbolType::ARITHMETIC)
             {
                 array_dec->SetElemType(std::make_shared<ArithmeticSymbol>(
-                    array_dec->ElemType()->LineNumber(),
-                    array_dec->ElemType()->Name(),
-                    static_cast<ArithmeticSymbol *>(specifier.get())->ArithmeticSymbolType(),
-                    array_dec->ElemType()->IsInitialized(),
-                    array_dec->ElemType()->InitialValue()));
+                    array_dec->GetElemType()->GetLineNumber(),
+                    array_dec->GetElemType()->GetName(),
+                    static_cast<ArithmeticSymbol *>(specifier.get())->GetArithmeticSymbolType(),
+                    array_dec->GetElemType()->GetIsInitialized(),
+                    array_dec->GetElemType()->GetInitialValue()));
             }
             else
             {
                 array_dec->SetElemType(std::make_shared<StructSymbol>(
-                    array_dec->ElemType()->LineNumber(),
-                    array_dec->ElemType()->Name(),
-                    static_cast<StructSymbol *>(specifier.get())->StructName(),
-                    array_dec->ElemType()->IsInitialized(),
-                    array_dec->ElemType()->InitialValue()));
+                    array_dec->GetElemType()->GetLineNumber(),
+                    array_dec->GetElemType()->GetName(),
+                    static_cast<StructSymbol *>(specifier.get())->GetStructName(),
+                    array_dec->GetElemType()->GetIsInitialized(),
+                    array_dec->GetElemType()->GetInitialValue()));
             }
 
             // Check assignment compatibility
-            if (dec->IsInitialized() &&
-                !IsAssignmentValid(*specifier, *(dec->InitialValue())))
+            if (dec->GetIsInitialized() &&
+                !IsAssignmentValid(*specifier, *(dec->GetInitialValue())))
             {
                 PrintError(
                     kErrorAssignTypeMismatch,
-                    dec->LineNumber(),
+                    dec->GetLineNumber(),
                     "Cannot assign '" +
                         GetVariableSymbolTypeName(dec) +
                         "' to a variable of type '" +
@@ -566,7 +566,7 @@ std::shared_ptr<StructSymbol> SemanticAnalyser::DoStructSpecifier(const KTreeNod
         KTreeNode *struct_id_node = node->l_child->r_sibling->l_child;
         struct_name =
             struct_id_node->value->ast_node_value.token->value;
-        if (struct_def_symbol_table_.contains(struct_name))
+        if (struct_def_symbol_table_.find(struct_name) != struct_def_symbol_table_.end())
         {
             return std::make_shared<StructSymbol>(
                 GetKTreeNodeLineNumber(struct_id_node), "", struct_name);
@@ -595,7 +595,7 @@ std::shared_ptr<StructSymbol> SemanticAnalyser::DoStructSpecifier(const KTreeNod
             struct_name = node->l_child->r_sibling->l_child->value->ast_node_value.token->value;
             def_list_node = node->l_child->r_sibling->r_sibling->r_sibling;
 
-            if (struct_def_symbol_table_.contains(struct_name))
+            if (struct_def_symbol_table_.find(struct_name) != struct_def_symbol_table_.end())
             {
                 PrintError(kErrorDuplicateStructName,
                            GetKTreeNodeLineNumber(node->l_child->r_sibling->l_child),
@@ -620,16 +620,16 @@ std::shared_ptr<StructSymbol> SemanticAnalyser::DoStructSpecifier(const KTreeNod
                 continue;
             }
 
-            if (field_names.contains(field->Name()))
+            if (field_names.find(field->GetName()) != field_names.end())
             {
                 PrintError(kErrorDuplicateStructFieldName,
-                           field->LineNumber(),
-                           "Duplicate field '" + field->Name() + "'");
+                           field->GetLineNumber(),
+                           "Duplicate field '" + field->GetName() + "'");
                 return nullptr;
             }
             else
             {
-                field_names.insert(field->Name());
+                field_names.insert(field->GetName());
             }
         }
 
@@ -641,11 +641,11 @@ std::shared_ptr<StructSymbol> SemanticAnalyser::DoStructSpecifier(const KTreeNod
                 continue;
             }
 
-            if (field->IsInitialized())
+            if (field->GetIsInitialized())
             {
                 PrintError(kErrorStructFieldInitialized,
-                           field->LineNumber(),
-                           "Struct field '" + field->Name() + "' is initialized");
+                           field->GetLineNumber(),
+                           "Struct field '" + field->GetName() + "' is initialized");
 
                 return nullptr;
             }
@@ -719,9 +719,9 @@ VariableSymbolSharedPtr SemanticAnalyser::DoDec(const KTreeNode *node)
 
     // When initial value is erroneous, just report the variable as uninitialized
     return std::make_shared<VariableSymbol>(
-        var_dec->LineNumber(),
-        var_dec->Name(),
-        var_dec->VariableSymbolType(),
+        var_dec->GetLineNumber(),
+        var_dec->GetName(),
+        var_dec->GetVariableSymbolType(),
         initial_value.first != nullptr,
         initial_value.first);
 }
@@ -749,8 +749,8 @@ VariableSymbolSharedPtr SemanticAnalyser::DoVarDec(const KTreeNode *node)
     }
 
     return std::make_shared<ArraySymbol>(
-        array_element->LineNumber(),
-        array_element->Name(),
+        array_element->GetLineNumber(),
+        array_element->GetName(),
         array_element,
         std::stoull(node->l_child->r_sibling->r_sibling->value->ast_node_value.token->value));
 }
@@ -976,7 +976,7 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
             case TOKEN_ID:
             {
                 std::string variable_name = node->l_child->value->ast_node_value.token->value;
-                if (symbol_table_.contains(variable_name))
+                if (symbol_table_.find(variable_name) != symbol_table_.end())
                 {
                     return {symbol_table_.at(variable_name), true};
                 }
@@ -1019,7 +1019,7 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
         {
             std::string function_name = node->l_child->value->ast_node_value.token->value;
             // No such callee symbol
-            if (!symbol_table_.contains(function_name))
+            if (symbol_table_.find(function_name) == symbol_table_.end())
             {
                 PrintError(kErrorUndefinedFunction,
                            GetKTreeNodeLineNumber(node->l_child),
@@ -1030,7 +1030,7 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
 
             auto function_variable_symbol = symbol_table_.at(function_name);
             // is not a function
-            if (function_variable_symbol->VariableSymbolType() != VariableSymbolType::FUNCTION)
+            if (function_variable_symbol->GetVariableSymbolType() != VariableSymbolType::FUNCTION)
             {
                 PrintError(kErrorInvalidInvokeOperator,
                            GetKTreeNodeLineNumber(node->l_child->r_sibling),
@@ -1042,7 +1042,7 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
             }
 
             auto function_symbol = static_cast<FunctionSymbol *>(function_variable_symbol.get());
-            auto function_args = function_symbol->Args();
+            auto function_args = function_symbol->GetArgs();
             // Check args
             // Call with args
             auto args_node = node->l_child->r_sibling->r_sibling;
@@ -1067,7 +1067,7 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
                     if (!IsAssignmentValid(*function_args[i], *args[i]))
                     {
                         PrintError(kErrorFunctionArgsMismatch,
-                                   args[i]->LineNumber(),
+                                   args[i]->GetLineNumber(),
                                    "Expected " +
                                        std::to_string(function_args.size()) +
                                        " arguments, but " +
@@ -1091,7 +1091,7 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
                 }
             }
 
-            return {function_symbol->ReturnType(), false};
+            return {function_symbol->GetReturnType(), false};
         }
         ///////////////////////////////////////////////////////////////////
 
@@ -1104,10 +1104,10 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
                 return kNullptrFalse;
             }
 
-            if (expression.first->VariableSymbolType() != VariableSymbolType::ARITHMETIC)
+            if (expression.first->GetVariableSymbolType() != VariableSymbolType::ARITHMETIC)
             {
                 PrintError(kErrorOperandTypeMismatch,
-                           expression.first->LineNumber(),
+                           expression.first->GetLineNumber(),
                            "Not an arithmetic type");
                 return kNullptrFalse;
             }
@@ -1128,7 +1128,7 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
             if (!IsIntArithmeticSymbol(*expression.first))
             {
                 PrintError(kErrorOperandTypeMismatch,
-                           expression.first->LineNumber(),
+                           expression.first->GetLineNumber(),
                            "Logical operator operand is not 'int' type");
                 return kNullptrFalse;
             }
@@ -1156,10 +1156,10 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
                 return kNullptrFalse;
             }
 
-            if (array_exp.first->VariableSymbolType() != VariableSymbolType::ARRAY)
+            if (array_exp.first->GetVariableSymbolType() != VariableSymbolType::ARRAY)
             {
                 PrintError(kErrorInvalidIndexOperator,
-                           array_exp.first->LineNumber(),
+                           array_exp.first->GetLineNumber(),
                            '\'' + GetVariableSymbolTypeName(array_exp.first) + "' type is not indexable");
 
                 return kNullptrFalse;
@@ -1174,13 +1174,13 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
             if (!IsIntArithmeticSymbol(*index_exp.first))
             {
                 PrintError(kErrorIndexNotInteger,
-                           index_exp.first->LineNumber(),
+                           index_exp.first->GetLineNumber(),
                            "Array index must be type 'int'");
 
                 return kNullptrFalse;
             }
 
-            return {static_cast<ArraySymbol *>(array_exp.first.get())->ElemType(), true};
+            return {static_cast<ArraySymbol *>(array_exp.first.get())->GetElemType(), true};
         }
 
         case TOKEN_OPERATOR_DOT:
@@ -1191,31 +1191,31 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
                 return kNullptrFalse;
             }
 
-            if (struct_exp.first->VariableSymbolType() != VariableSymbolType::STRUCT)
+            if (struct_exp.first->GetVariableSymbolType() != VariableSymbolType::STRUCT)
             {
                 PrintError(kErrorInvalidDotOperator,
-                           struct_exp.first->LineNumber(),
+                           struct_exp.first->GetLineNumber(),
                            "Dotted expression is not a struct");
                 return kNullptrFalse;
             }
 
-            std::string struct_name = static_cast<StructSymbol *>(struct_exp.first.get())->StructName();
+            std::string struct_name = static_cast<StructSymbol *>(struct_exp.first.get())->GetStructName();
 
-            if (!struct_def_symbol_table_.contains(struct_name))
+            if (struct_def_symbol_table_.find(struct_name) == struct_def_symbol_table_.end())
             {
                 return kNullptrFalse;
             }
 
             std::string field_name = node->r_child->value->ast_node_value.token->value;
 
-            auto struct_fields = struct_def_symbol_table_.at(struct_name)->Fields();
+            auto struct_fields = struct_def_symbol_table_.at(struct_name)->GetFields();
 
             auto selected_field = std::find_if(
                 struct_fields.cbegin(),
                 struct_fields.cend(),
                 [&field_name](const VariableSymbolSharedPtr &field)
                 {
-                    return field->Name() == field_name;
+                    return field->GetName() == field_name;
                 });
 
             if (selected_field == struct_fields.cend())
@@ -1256,7 +1256,7 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
             if (!l_exp.second)
             {
                 PrintError(kErrorAssignToRValue,
-                           l_exp.first->LineNumber(),
+                           l_exp.first->GetLineNumber(),
                            "Cannot assign to a right value");
 
                 return kNullptrFalse;
@@ -1266,7 +1266,7 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
             {
                 PrintError(
                     kErrorAssignTypeMismatch,
-                    r_exp.first->LineNumber(),
+                    r_exp.first->GetLineNumber(),
                     "Cannot assign '" +
                         GetVariableSymbolTypeName(r_exp.first) +
                         "' to a variable of type '" +
@@ -1284,7 +1284,7 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
             if (!IsIntArithmeticSymbol(*l_exp.first))
             {
                 PrintError(kErrorOperandTypeMismatch,
-                           l_exp.first->LineNumber(),
+                           l_exp.first->GetLineNumber(),
                            "Logical operator operand is not 'int' type");
                 return kNullptrFalse;
             }
@@ -1292,7 +1292,7 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
             if (!IsIntArithmeticSymbol(*r_exp.first))
             {
                 PrintError(kErrorOperandTypeMismatch,
-                           r_exp.first->LineNumber(),
+                           r_exp.first->GetLineNumber(),
                            "Logical operator operand is not 'int' type");
                 return kNullptrFalse;
             }
@@ -1310,14 +1310,14 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
             if (!IsSameTypeArithmeticSymbol(*l_exp.first, *r_exp.first))
             {
                 PrintError(kErrorOperandTypeMismatch,
-                           l_exp.first->LineNumber(),
+                           l_exp.first->GetLineNumber(),
                            "Relational operator must take two operands of an identical arithmetic type");
 
                 return kNullptrFalse;
             }
 
             return {std::make_shared<ArithmeticSymbol>(
-                        l_exp.first->LineNumber(),
+                        l_exp.first->GetLineNumber(),
                         "",
                         ArithmeticSymbolType::INT),
                     false};
@@ -1331,7 +1331,7 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
             if (!IsSameTypeArithmeticSymbol(*l_exp.first, *r_exp.first))
             {
                 PrintError(kErrorOperandTypeMismatch,
-                           l_exp.first->LineNumber(),
+                           l_exp.first->GetLineNumber(),
                            "Mathematical operator must take two operands of an identical arithmetic type");
 
                 return kNullptrFalse;

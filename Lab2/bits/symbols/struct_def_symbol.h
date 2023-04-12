@@ -18,7 +18,7 @@ public:
         : Symbol(line_number, name, SymbolType::STRUCT_DEF),
           fields_(fields) {}
 
-    std::vector<VariableSymbolSharedPtr> Fields() const
+    std::vector<VariableSymbolSharedPtr> GetFields() const
     {
         return fields_;
     }

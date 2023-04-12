@@ -37,17 +37,17 @@ public:
           name_(name),
           symbol_type_(symbol_type) {}
 
-    int LineNumber() const
+    int GetLineNumber() const
     {
         return line_number_;
     }
 
-    std::string Name() const
+    std::string GetName() const
     {
         return name_;
     }
 
-    SymbolType SymbolType() const
+    SymbolType GetSymbolType() const
     {
         return symbol_type_;
     }

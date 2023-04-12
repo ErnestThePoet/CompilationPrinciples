@@ -59,24 +59,23 @@ public:
     void PrintSymbolTable() const;
     void PrintStructDefSymbolTable() const;
 
-    bool HasSemanticError() const
+    bool GetHasSemanticError() const
     {
         return has_semantic_error_;
     }
 
-    SymbolTable SymbolTable() const
+    SymbolTable GetSymbolTable() const
     {
         return symbol_table_;
     }
 
-    StructDefSymbolTable StructDefSymbolTable() const
+    StructDefSymbolTable GetStructDefSymbolTable() const
     {
         return struct_def_symbol_table_;
     }
 
 private:
-    int
-    GetKTreeNodeLineNumber(const KTreeNode *node) const;
+    int GetKTreeNodeLineNumber(const KTreeNode *node) const;
     std::string GetVariableSymbolTypeName(const VariableSymbolSharedPtr &symbol) const;
     std::string GetVariableSymbolTypeName(const VariableSymbol *symbol) const;
     void PrintError(

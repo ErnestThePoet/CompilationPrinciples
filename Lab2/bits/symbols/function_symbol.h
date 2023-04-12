@@ -26,12 +26,12 @@ public:
           args_(args),
           return_type_(return_type) {}
 
-    std::vector<VariableSymbolSharedPtr> Args() const
+    std::vector<VariableSymbolSharedPtr> GetArgs() const
     {
         return args_;
     }
 
-    VariableSymbolSharedPtr ReturnType() const
+    VariableSymbolSharedPtr GetReturnType() const
     {
         return return_type_;
     }

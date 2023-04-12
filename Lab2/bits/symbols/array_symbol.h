@@ -19,7 +19,7 @@ public:
           elem_type_(elem_type),
           size_(size) {}
 
-    VariableSymbolSharedPtr ElemType() const
+    VariableSymbolSharedPtr GetElemType() const
     {
         return elem_type_;
     }
@@ -29,7 +29,7 @@ public:
         elem_type_ = elem_type;
     }
 
-    size_t Size() const
+    size_t GetSize() const
     {
         return size_;
     }

@@ -17,7 +17,7 @@ public:
         : VariableSymbol(line_number, name, VariableSymbolType::ARITHMETIC, is_initialized, initial_value),
           arithmetic_symbol_type_(arithmetic_symbol_type) {}
 
-    ArithmeticSymbolType ArithmeticSymbolType() const
+    ArithmeticSymbolType GetArithmeticSymbolType() const
     {
         return arithmetic_symbol_type_;
     }

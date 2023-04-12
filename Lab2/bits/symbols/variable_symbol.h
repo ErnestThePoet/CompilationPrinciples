@@ -11,31 +11,31 @@ class VariableSymbol : public Symbol
 private:
     VariableSymbolType variable_symbol_type_;
     bool is_initialized_;
-    VariableSymbolSharedPtr initial_value_;
+    std::shared_ptr<VariableSymbol> initial_value_;
 
 public:
     VariableSymbol(const int line_number,
                    const std::string &name,
                    const VariableSymbolType variable_symbol_type,
                    const bool is_initialized = false,
-                   const VariableSymbolSharedPtr &initial_value = nullptr)
+                   const std::shared_ptr<VariableSymbol> &initial_value = nullptr)
         : Symbol(line_number, name, SymbolType::VARIABLE),
           variable_symbol_type_(variable_symbol_type),
           is_initialized_(is_initialized),
           initial_value_(initial_value) {}
 
-    VariableSymbolType VariableSymbolType() const
+    VariableSymbolType GetVariableSymbolType() const
     {
         return variable_symbol_type_;
     }
 
-    bool IsInitialized() const
+    bool GetIsInitialized() const
     {
         return is_initialized_;
     }
 
     // If is initialized, initial value is not nullptr
-    VariableSymbolSharedPtr InitialValue() const
+    std::shared_ptr<VariableSymbol> GetInitialValue() const
     {
         return initial_value_;
     }

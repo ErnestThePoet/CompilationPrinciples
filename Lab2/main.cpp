@@ -1,15 +1,11 @@
 #include <cstdio>
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <list>
 
-#include "../../Lab1/bits/defs.h"
-#include "../../Lab1/bits/token.h"
-#include "../../Lab1/bits/ast_node.h"
-#include "../../Lab1/bits/k_tree.h"
+#include "../Lab1/bits/defs.h"
+#include "../Lab1/bits/token.h"
+#include "../Lab1/bits/ast_node.h"
+#include "../Lab1/bits/k_tree.h"
 
-#include "./semantic_analyser.h"
+#include "bits/semantic_analyser.h"
 
 KTreeNode *kRoot = NULL;
 bool kHasLexicalError = false;
@@ -57,7 +53,7 @@ int main(int argc, char *argv[])
 
     KTreePreOrderTraverse(kRoot, SemanticAnalyse, NULL);
 
-    if (!kSemanticAnalyser.HasSemanticError())
+    if (!kSemanticAnalyser.GetHasSemanticError())
     {
         kSemanticAnalyser.PrintStructDefSymbolTable();
         kSemanticAnalyser.PrintSymbolTable();

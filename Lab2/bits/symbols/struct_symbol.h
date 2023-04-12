@@ -19,7 +19,7 @@ public:
         : VariableSymbol(line_number, name, VariableSymbolType::STRUCT, is_initialized, initial_value),
           struct_name_(struct_name) {}
 
-    std::string StructName() const
+    std::string GetStructName() const
     {
         return struct_name_;
     }
