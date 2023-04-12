@@ -186,23 +186,33 @@ bool SemanticAnalyser::IsStructAssignmentValid(
 }
 
 // [INSERTS] VariableSymbol
-// [CHECKS] kErrorDuplicateVariableName
-void SemanticAnalyser::InsertVariableSymbol(const VariableSymbolSharedPtr &symbol)
+// [CHECKS] kErrorDuplicateVariableName,
+//          kErrorDuplicateFunctionName
+// Returns whether successfully inserted
+bool SemanticAnalyser::InsertVariableSymbol(const VariableSymbolSharedPtr &symbol)
 {
     if (symbol == nullptr)
     {
-        return;
+        return false;
     }
 
     if (symbol_table_.contains(symbol->Name()))
     {
-        PrintError(kErrorDuplicateVariableName,
+        PrintError(symbol->VariableSymbolType() == VariableSymbolType::FUNCTION
+                       ? kErrorDuplicateFunctionName
+                       : kErrorDuplicateVariableName,
                    symbol->LineNumber(),
-                   "Duplicate variable name: '" + symbol->Name() + '\'');
+                   symbol->VariableSymbolType() == VariableSymbolType::FUNCTION
+                       ? "Duplicate function name: '"
+                       : "Duplicate variable name: '" + symbol->Name() + '\'');
+
+        return false;
     }
     else
     {
         symbol_table_[symbol->Name()] = symbol;
+
+        return true;
     }
 }
 
@@ -219,19 +229,16 @@ void SemanticAnalyser::DoExtDefList(const KTreeNode *node)
 // [COMBINATION] Combines specifier and dec_list <VIA DoDecListDefCommon>
 // [INSERTS] VariableSymbol <VIA InsertVariableSymbol>
 // [CHECKS] kErrorDuplicateVariableName <VIA InsertVariableSymbol>,
-//          kErrorDuplicateFunctionName,
+//          kErrorDuplicateFunctionName <VIA InsertVariableSymbol>,
 //          kErrorAssignTypeMismatch <VIA DoDecListDefCommon>,
-//          kErrorUndefinedStruct <VIA DoDecListDefCommon>
+//          kErrorUndefinedStruct <VIA DoDecListDefCommon>,
+//          kErrorReturnTypeMismatch
 void SemanticAnalyser::DoExtDef(const KTreeNode *node)
 {
+    auto specifier = DoSpecifier(node->l_child);
+
     // ExtDef: Specifier SEMICOLON
     if (node->l_child->r_sibling->value->is_token)
-    {
-        return;
-    }
-
-    auto specifier = DoSpecifier(node->l_child);
-    if (specifier == nullptr)
     {
         return;
     }
@@ -239,6 +246,11 @@ void SemanticAnalyser::DoExtDef(const KTreeNode *node)
     // ExtDef: Specifier ExtDecList SEMICOLON
     if (node->l_child->r_sibling->value->ast_node_value.variable->type == VARIABLE_EXT_DEC_LIST)
     {
+        if (specifier == nullptr)
+        {
+            return;
+        }
+
         auto dec_list = DoExtDecList(node->l_child->r_sibling);
 
         auto defs = DoDecListDefCommon(specifier, dec_list);
@@ -251,6 +263,47 @@ void SemanticAnalyser::DoExtDef(const KTreeNode *node)
     // ExtDef: Specifier FunDec CompSt
     else
     {
+        // we do not check specifier!=nullptr or we will be unable to check the whole function body
+        auto fun_dec = DoFunDec(node->l_child->r_sibling);
+        if (fun_dec == nullptr)
+        {
+            return;
+        }
+
+        InsertVariableSymbol(std::make_shared<FunctionSymbol>(
+            fun_dec->LineNumber(),
+            fun_dec->Name(),
+            fun_dec->Args(),
+            specifier // may be nullptr
+            ));
+
+        for (auto &arg : fun_dec->Args())
+        {
+            InsertVariableSymbol(arg);
+        }
+
+        auto return_types = DoCompSt(node->l_child->r_sibling->r_sibling);
+
+        // all parallel return values must match the declared return type
+        if (specifier != nullptr)
+        {
+            for (auto &return_type : return_types)
+            {
+                if (return_type == nullptr)
+                {
+                    continue;
+                }
+
+                if (!IsAssignmentValid(*specifier, *return_type))
+                {
+                    PrintError(kErrorReturnTypeMismatch,
+                               return_type->LineNumber(),
+                               "Should return '" + GetVariableSymbolTypeName(specifier) + '\'');
+
+                    // do not break
+                }
+            }
+        }
     }
 }
 

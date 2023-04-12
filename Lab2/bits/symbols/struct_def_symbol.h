@@ -18,11 +18,6 @@ public:
         : Symbol(line_number, name, SymbolType::STRUCT_DEF),
           fields_(fields) {}
 
-    VariableSymbolSharedPtr FieldAt(int index) const
-    {
-        return fields_[index];
-    }
-
     std::vector<VariableSymbolSharedPtr> Fields() const
     {
         return fields_;

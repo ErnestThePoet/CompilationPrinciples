@@ -6,20 +6,21 @@
 #include "symbol_type.h"
 
 /****************************************************************
-*         Inheritance diagram
-*
-*               Symbol
-*                / \
-*              /    \
-*            /       \
-* VariableSymbol     StructDefSymbol
-*  |          \
-*  |    ...    ------------------------------------
-*  |                    \             \            \
-* ArithmeticSymbol ArraySymbol FunctionSymbol StructSymbol
-*
-*
-*****************************************************************/
+ *         Inheritance diagram
+ *
+ *               Symbol
+ *                / \
+ *              /    \
+ *            /       \
+ * VariableSymbol     StructDefSymbol
+ *  |          \
+ *  |    ...    ------------------------------------
+ *  |                    \             \            \
+ * ArithmeticSymbol ArraySymbol FunctionSymbol StructSymbol
+ *
+ * All immutable except ArraySymbol can have its elem_type_ set
+ *
+ *****************************************************************/
 
 class Symbol
 {

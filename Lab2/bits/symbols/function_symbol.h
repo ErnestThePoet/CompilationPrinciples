@@ -26,11 +26,6 @@ public:
           args_(args),
           return_type_(return_type) {}
 
-    VariableSymbolSharedPtr ArgAt(int index) const
-    {
-        return args_[index];
-    }
-
     std::vector<VariableSymbolSharedPtr> Args() const
     {
         return args_;

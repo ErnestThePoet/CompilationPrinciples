@@ -32,14 +32,14 @@ private:
     std::mt19937 mt19937_;
     std::uniform_int_distribution<> distribution_;
 
-    static constexpr int kErrorUndefinedVariable = 1;     // Impled
-    static constexpr int kErrorUndefinedFunction = 2;     // Impled
-    static constexpr int kErrorDuplicateVariableName = 3; // ExtDef impled
-    static constexpr int kErrorDuplicateFunctionName = 4; // Impled
-    static constexpr int kErrorAssignTypeMismatch = 5;    // Impled
-    static constexpr int kErrorAssignToRValue = 6;        // Impled
-    static constexpr int kErrorOperandTypeMismatch = 7;   // Impled
-    static constexpr int kErrorReturnTypeMismatch = 8;
+    static constexpr int kErrorUndefinedVariable = 1;         // Impled
+    static constexpr int kErrorUndefinedFunction = 2;         // Impled
+    static constexpr int kErrorDuplicateVariableName = 3;     // Impled
+    static constexpr int kErrorDuplicateFunctionName = 4;     // Impled
+    static constexpr int kErrorAssignTypeMismatch = 5;        // Impled
+    static constexpr int kErrorAssignToRValue = 6;            // Impled
+    static constexpr int kErrorOperandTypeMismatch = 7;       // Impled
+    static constexpr int kErrorReturnTypeMismatch = 8;        // Impled
     static constexpr int kErrorFunctionArgsMismatch = 9;      // Impled
     static constexpr int kErrorInvalidIndexOperator = 10;     // Impled
     static constexpr int kErrorInvalidInvokeOperator = 11;    // Impled
@@ -90,7 +90,7 @@ private:
         const StructDefSymbol &def_l,
         const StructDefSymbol &def_r) const;
 
-    void InsertVariableSymbol(const VariableSymbolSharedPtr &symbol);
+    bool InsertVariableSymbol(const VariableSymbolSharedPtr &symbol);
 
     // Refer to C-- syntax defined in Lab1/parser.y for a better understanding of each method
     // Contract: Functions that return a single ptr may return nullptr.
