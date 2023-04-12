@@ -45,7 +45,7 @@ KTreeNode *KTreeCreateNodeWithChidren(KTreeNodeValue *value, int argc, ...)
     return root;
 }
 
-void FreeKTree(KTreeNode *root, KTreeNodeFreeValueAction action)
+void KTreeFree(KTreeNode *root, KTreeNodeFreeValueAction action)
 {
     KTreeFreeNodeValue = action;
     KTreePreOrderTraverse(root, KTreeFreeNode_, NULL);

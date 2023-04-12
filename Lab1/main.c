@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
         KTreePreOrderTraverse(kRoot, PrintAstNode, NULL);
     }
 
-    FreeKTree(kRoot, FreeKTreeNode);
+    KTreeFree(kRoot, FreeKTreeNode);
 
     return SUCCESS;
 }

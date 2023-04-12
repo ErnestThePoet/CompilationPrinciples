@@ -26,7 +26,7 @@ typedef void (*KTreeNodeFreeValueAction)(KTreeNodeValue *);
 
 KTreeNode *KTreeCreateNode(KTreeNodeValue *value);
 KTreeNode *KTreeCreateNodeWithChidren(KTreeNodeValue *value, int argc, ...);
-void FreeKTree(KTreeNode *root, KTreeNodeFreeValueAction action);
+void KTreeFree(KTreeNode *root, KTreeNodeFreeValueAction action);
 void KTreeAddChildRight(KTreeNode *root, KTreeNode *child);
 void KTreePreOrderTraverse(KTreeNode *root, KTreeNodeTraverseAction action, void *user_arg);
 

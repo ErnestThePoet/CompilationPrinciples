@@ -5,7 +5,7 @@
 #include "../Lab1/bits/ast_node.h"
 #include "../Lab1/bits/k_tree.h"
 
-#include "bits/semantic_analyser.h"
+#include "./bits/semantic_analyser.h"
 
 KTreeNode *kRoot = NULL;
 bool kHasLexicalError = false;
@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
 
     if (kHasLexicalError || kHasSyntaxError)
     {
-        FreeKTree(kRoot, FreeKTreeNode);
+        KTreeFree(kRoot, FreeKTreeNode);
         return FAILURE;
     }
 
@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
         kSemanticAnalyser.PrintSymbolTable();
     }
 
-    FreeKTree(kRoot, FreeKTreeNode);
+    KTreeFree(kRoot, FreeKTreeNode);
 
     return SUCCESS;
 }
