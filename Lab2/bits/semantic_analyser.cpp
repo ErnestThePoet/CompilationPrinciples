@@ -187,7 +187,7 @@ bool SemanticAnalyser::IsStructAssignmentValid(
 
 void SemanticAnalyser::DoExtDefList(const KTreeNode *node)
 {
-    // ExtDefList: ExtDef ExtDefList
+    // ExtDefList: ExtDef ExtDefList | <NULL>
     while (node != NULL)
     {
         DoExtDef(node->l_child);
@@ -530,7 +530,7 @@ std::shared_ptr<StructSymbol> SemanticAnalyser::DoStructSpecifier(const KTreeNod
 // Return a list of symbol definitions, each of which contains full symbol information.
 std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDefList(const KTreeNode *node)
 {
-    // DefList: Def DefList
+    // DefList: Def DefList | <NULL>
     std::vector<VariableSymbolSharedPtr> defs;
     while (node != NULL)
     {
