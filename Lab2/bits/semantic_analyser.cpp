@@ -185,6 +185,27 @@ bool SemanticAnalyser::IsStructAssignmentValid(
     return true;
 }
 
+// [INSERTS] VariableSymbol
+// [CHECKS] kErrorDuplicateVariableName
+void SemanticAnalyser::InsertVariableSymbol(const VariableSymbolSharedPtr &symbol)
+{
+    if (symbol == nullptr)
+    {
+        return;
+    }
+
+    if (symbol_table_.contains(symbol->Name()))
+    {
+        PrintError(kErrorDuplicateVariableName,
+                   symbol->LineNumber(),
+                   "Duplicate variable name: '" + symbol->Name() + '\'');
+    }
+    else
+    {
+        symbol_table_[symbol->Name()] = symbol;
+    }
+}
+
 void SemanticAnalyser::DoExtDefList(const KTreeNode *node)
 {
     // ExtDefList: ExtDef ExtDefList | <NULL>
@@ -195,9 +216,12 @@ void SemanticAnalyser::DoExtDefList(const KTreeNode *node)
     }
 }
 
-// [INSERTS] VariableSymbol
-// [CHECKS] kErrorDuplicateVariableName,
-//          kErrorDuplicateFunctionName
+// [COMBINATION] Combines specifier and dec_list <VIA DoDecListDefCommon>
+// [INSERTS] VariableSymbol <VIA InsertVariableSymbol>
+// [CHECKS] kErrorDuplicateVariableName <VIA InsertVariableSymbol>,
+//          kErrorDuplicateFunctionName,
+//          kErrorAssignTypeMismatch <VIA DoDecListDefCommon>,
+//          kErrorUndefinedStruct <VIA DoDecListDefCommon>
 void SemanticAnalyser::DoExtDef(const KTreeNode *node)
 {
     // ExtDef: Specifier SEMICOLON
@@ -221,21 +245,7 @@ void SemanticAnalyser::DoExtDef(const KTreeNode *node)
 
         for (auto &def : defs)
         {
-            if (def == nullptr)
-            {
-                continue;
-            }
-
-            if (symbol_table_.contains(def->Name()))
-            {
-                PrintError(kErrorDuplicateVariableName,
-                           def->LineNumber(),
-                           "Duplicate variable name: '" + def->Name() + '\'');
-            }
-            else
-            {
-                symbol_table_[def->Name()] = def;
-            }
+            InsertVariableSymbol(def);
         }
     }
     // ExtDef: Specifier FunDec CompSt
@@ -678,6 +688,9 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoVarList(const KTreeNode
     return vars;
 }
 
+// [COMBINATION] Combines specifier and dec_list <VIA DoDecListDefCommon>
+// [CHECKS] kErrorAssignTypeMismatch <VIA DoDecListDefCommon>,
+//          kErrorUndefinedStruct <VIA DoDecListDefCommon>
 // Return a param declaration containing full symbol information.
 VariableSymbolSharedPtr SemanticAnalyser::DoParamDec(const KTreeNode *node)
 {
@@ -688,8 +701,17 @@ VariableSymbolSharedPtr SemanticAnalyser::DoParamDec(const KTreeNode *node)
     return DoDecListDefCommon(specifier, {var_dec})[0];
 }
 
+// [INSERTS] VariableSymbol <VIA InsertVariableSymbol>
+// [CHECKS] kErrorDuplicateVariableName <VIA InsertVariableSymbol>
+// Returns the return types of the first statement.
 std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoCompSt(const KTreeNode *node)
 {
+    // CompSt: L_BRACE DefList StmtList R_BRACE
+    auto defs = DoDefList(node->l_child->r_sibling);
+    for (auto &def : defs)
+    {
+        InsertVariableSymbol(def);
+    }
 }
 
 // Returns the return types of the first statement.
