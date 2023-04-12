@@ -11,10 +11,11 @@
 #include <random>
 #include <algorithm>
 
-extern "C"{
-    #include "../../Lab1/bits/k_tree.h"
-    #include "../../Lab1/bits/token.h"
-    #include "../../Lab1/bits/variable.h"
+extern "C"
+{
+#include "../../Lab1/bits/k_tree.h"
+#include "../../Lab1/bits/token.h"
+#include "../../Lab1/bits/variable.h"
 }
 
 #include "./symbols/variable_symbol.h"
@@ -24,12 +25,13 @@ extern "C"{
 #include "./symbols/struct_symbol.h"
 #include "./symbols/struct_def_symbol.h"
 
-    using SymbolTable = std::unordered_map<std::string, VariableSymbolSharedPtr>;
+using SymbolTable = std::unordered_map<std::string, VariableSymbolSharedPtr>;
 using StructDefSymbolTable = std::unordered_map<std::string, StructDefSymbolSharedPtr>;
 
 class SemanticAnalyser
 {
 private:
+    bool is_started_;
     bool has_semantic_error_;
     SymbolTable symbol_table_;
     StructDefSymbolTable struct_def_symbol_table_;
@@ -57,7 +59,9 @@ private:
     static constexpr int kErrorUndefinedStruct = 17;          // Impled
 
 public:
-    SemanticAnalyser() : has_semantic_error_(false), mt19937_(random_device_()) {}
+    SemanticAnalyser() : is_started_(false),
+                         has_semantic_error_(false),
+                         mt19937_(random_device_()) {}
     void Analyse(KTreeNode *node, size_t, void *);
 
     void PrintSymbolTable() const;

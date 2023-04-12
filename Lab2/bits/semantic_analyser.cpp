@@ -2,9 +2,15 @@
 
 void SemanticAnalyser::Analyse(KTreeNode *node, size_t, void *)
 {
+    if (is_started_)
+    {
+        return;
+    }
+
     if (!node->value->is_token && node->value->ast_node_value.variable->type == VARIABLE_EXT_DEF_LIST)
     {
         DoExtDefList(node);
+        is_started_ = true;
     }
 }
 
