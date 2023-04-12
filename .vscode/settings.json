@@ -8,7 +8,8 @@
         "variable.h": "c",
         "k_tree.h": "c",
         "ast_node.h": "c",
-        "execinfo.h": "c"
+        "execinfo.h": "c",
+        "defs.h": "c"
     },
     "cmake.sourceDirectory": "${workspaceFolder}/Lab1"
 }

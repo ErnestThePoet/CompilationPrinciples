@@ -1,9 +1,9 @@
 #include <stdbool.h>
 #include <stdio.h>
-#include "defs.h"
-#include "token.h"
-#include "ast_node.h"
-#include "k_tree.h"
+#include "./bits/defs.h"
+#include "./bits/token.h"
+#include "./bits/ast_node.h"
+#include "./bits/k_tree.h"
 
 KTreeNode *kRoot = NULL;
 bool kHasLexicalError = false;
