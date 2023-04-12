@@ -313,7 +313,7 @@ bool SemanticAnalyser::InsertVariableSymbol(const VariableSymbolSharedPtr &symbo
 
 void SemanticAnalyser::DoExtDefList(const KTreeNode *node)
 {
-    // ExtDefList: ExtDef ExtDefList | <NULL>
+    // ExtDefList: ExtDef ExtDefList(Nullable) | <NULL>
     while (node != NULL)
     {
         DoExtDef(node->l_child);
@@ -604,19 +604,19 @@ std::shared_ptr<StructSymbol> SemanticAnalyser::DoStructSpecifier(const KTreeNod
                    "Struct '" + struct_name + "' is not defined");
         return nullptr;
     }
-    // StructSpecifier: STRUCT OptTag L_BRACE DefList R_BRACE
+    // StructSpecifier: STRUCT OptTag L_BRACE DefList(Nullable) R_BRACE
     else
     {
         KTreeNode *def_list_node = nullptr;
         // Unnamed struct def
-        // StructSpecifier: STRUCT L_BRACE DefList R_BRACE
+        // StructSpecifier: STRUCT L_BRACE DefList(Nullable) R_BRACE
         if (node->l_child->r_sibling->value->is_token)
         {
             struct_name = GetNewAnnoyStructName();
             def_list_node = node->l_child->r_sibling->r_sibling;
         }
         // Named struct def
-        // StructSpecifier: STRUCT OptTag L_BRACE DefList R_BRACE
+        // StructSpecifier: STRUCT OptTag L_BRACE DefList(Nullable) R_BRACE
         else
         {
             struct_name = node->l_child->r_sibling->l_child->value->ast_node_value.token->value;
@@ -692,7 +692,7 @@ std::shared_ptr<StructSymbol> SemanticAnalyser::DoStructSpecifier(const KTreeNod
 std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDefList(
     const KTreeNode *node, const bool should_insert)
 {
-    // DefList: Def DefList | <NULL>
+    // DefList: Def DefList(Nullable) | <NULL>
     std::vector<VariableSymbolSharedPtr> defs;
     while (node != NULL)
     {
@@ -869,23 +869,42 @@ VariableSymbolSharedPtr SemanticAnalyser::DoParamDec(const KTreeNode *node)
 // Returns the return types of the first statement.
 std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoCompSt(const KTreeNode *node)
 {
-    // CompSt: L_BRACE DefList StmtList R_BRACE
-    DoDefList(node->l_child->r_sibling, true);
+    // CompSt: L_BRACE DefList(Nullable) StmtList(Nullable) R_BRACE
 
-    if (node->l_child->r_sibling->r_sibling->value->is_token)
+    // At least one of DefList and StmtList is not NULL
+    if (!node->l_child->r_sibling->value->is_token)
     {
-        return std::vector<VariableSymbolSharedPtr>();
+        // DefList is not NULL
+        if (node->l_child->r_sibling->value->ast_node_value.variable->type == VARIABLE_DEF_LIST)
+        {
+            DoDefList(node->l_child->r_sibling, true);
+
+            // StmtList is not NULL either
+            if (!node->l_child->r_sibling->r_sibling->value->is_token)
+            {
+                return DoStmtList(node->l_child->r_sibling);
+            }
+            // StmtList is NULL
+            else
+            {
+                return std::vector<VariableSymbolSharedPtr>();
+            }
+        }
+        // DefList is NULL and StmtList is not NULL
+        else
+        {
+            return DoStmtList(node->l_child->r_sibling);
+        }
     }
-    else
-    {
-        return DoStmtList(node->l_child->r_sibling->r_sibling);
-    }
+
+    // Both DefList and StmtList are NULL
+    return std::vector<VariableSymbolSharedPtr>();
 }
 
 // Returns the return types of the first statement.
 std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoStmtList(const KTreeNode *node)
 {
-    // StmtList: Stmt StmtList | <NULL>
+    // StmtList: Stmt StmtList(Nullable) | <NULL>
     std::vector<VariableSymbolSharedPtr> statement_return_types;
     bool is_first_statement = true;
 
