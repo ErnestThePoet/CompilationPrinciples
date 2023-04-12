@@ -691,8 +691,30 @@ VariableSymbolSharedPtr SemanticAnalyser::DoParamDec(const KTreeNode *node)
 std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoCompSt(const KTreeNode *node)
 {
 }
+
+// Returns the return types of the first statement.
 std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoStmtList(const KTreeNode *node)
 {
+    // StmtList: Stmt StmtList | <NULL>
+    std::vector<VariableSymbolSharedPtr> statement_return_types;
+    bool is_first_statement = true;
+
+    while (node != NULL)
+    {
+        if (is_first_statement)
+        {
+            statement_return_types = DoStmt(node->l_child);
+            is_first_statement = false;
+        }
+        else
+        {
+            DoStmt(node->l_child);
+        }
+
+        node = node->r_child;
+    }
+
+    return statement_return_types;
 }
 
 // [CHECKS] kErrorOperandTypeMismatch
