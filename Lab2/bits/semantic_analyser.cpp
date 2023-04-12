@@ -712,6 +712,15 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoCompSt(const KTreeNode 
     {
         InsertVariableSymbol(def);
     }
+
+    if (node->l_child->r_sibling->r_sibling->value->is_token)
+    {
+        return std::vector<VariableSymbolSharedPtr>();
+    }
+    else
+    {
+        return DoStmtList(node->l_child->r_sibling->r_sibling);
+    }
 }
 
 // Returns the return types of the first statement.
