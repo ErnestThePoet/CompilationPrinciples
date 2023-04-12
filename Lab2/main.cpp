@@ -28,23 +28,24 @@ void SemanticAnalyse(KTreeNode *root, size_t current_level, void *user_arg)
 
 int main(int argc, char *argv[])
 {
-    if (argc != 3)
+    if (argc == 1)
     {
-        std::cerr << "Usage: parser <input-file> <output-file>\n";
-        return FAILURE;
+        yyparse();
     }
-
-    FILE *source_file = fopen(argv[1], "r");
-    if (source_file == NULL)
+    else
     {
-        fprintf(stderr, "Failed to open input file %s\n", argv[1]);
-        return FAILURE;
+        FILE *source_file = fopen(argv[1], "r");
+        if (source_file == NULL)
+        {
+            fprintf(stderr, "Failed to open %s\n", argv[1]);
+            return FAILURE;
+        }
+
+        yyrestart(source_file);
+        yyparse();
+
+        fclose(source_file);
     }
-
-    yyrestart(source_file);
-    yyparse();
-
-    fclose(source_file);
 
     if (kHasLexicalError || kHasSyntaxError)
     {
