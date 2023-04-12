@@ -1,12 +1,13 @@
 #include <cstdio>
 
-extern "C"{
-    #include "../Lab1/bits/defs.h"
-    #include "../Lab1/bits/token.h"
-    #include "../Lab1/bits/ast_node.h"
-    #include "../Lab1/bits/k_tree.h"
-    #include "../Lab1/generated/lex_analyser.h"
-    #include "../Lab1/generated/parser.h"
+extern "C"
+{
+#include "../Lab1/bits/defs.h"
+#include "../Lab1/bits/token.h"
+#include "../Lab1/bits/ast_node.h"
+#include "../Lab1/bits/k_tree.h"
+#include "../Lab1/generated/lex_analyser.h"
+#include "../Lab1/generated/parser.h"
 }
 
 #include "./bits/semantic_analyser.h"
@@ -21,9 +22,9 @@ void FreeKTreeNode(KTreeNodeValue *node)
     AstNodeFree(*node);
 }
 
-void SemanticAnalyse(KTreeNode *root, size_t current_level, void *user_arg)
+void SemanticAnalyse(KTreeNode *root, size_t, void *)
 {
-    kSemanticAnalyser.Analyse(root, current_level, user_arg);
+    kSemanticAnalyser.Analyse(root);
 }
 
 int main(int argc, char *argv[])

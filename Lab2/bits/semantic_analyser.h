@@ -62,7 +62,7 @@ public:
     SemanticAnalyser() : is_started_(false),
                          has_semantic_error_(false),
                          mt19937_(random_device_()) {}
-    void Analyse(KTreeNode *node, size_t, void *);
+    void Analyse(const KTreeNode *node);
 
     // Debug only
     void PrintKTreeNodeInfo(const KTreeNode *node) const;

@@ -1,6 +1,6 @@
 #include "semantic_analyser.h"
 
-void SemanticAnalyser::Analyse(KTreeNode *node, size_t, void *)
+void SemanticAnalyser::Analyse(const KTreeNode *node)
 {
     if (is_started_)
     {
