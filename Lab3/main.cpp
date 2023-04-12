@@ -22,9 +22,9 @@ void FreeKTreeNode(KTreeNodeValue *node)
     AstNodeFree(*node);
 }
 
-void SemanticAnalyse(KTreeNode *root, size_t current_level, void *user_arg)
+void SemanticAnalyse(KTreeNode *root, size_t, void *)
 {
-    kSemanticAnalyser.Analyse(root, current_level, user_arg);
+    kSemanticAnalyser.Analyse(root);
 }
 
 int main(int argc, char *argv[])
