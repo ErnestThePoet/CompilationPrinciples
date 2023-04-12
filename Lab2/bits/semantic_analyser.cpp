@@ -879,7 +879,7 @@ VariableSymbolSharedPtr SemanticAnalyser::DoParamDec(const KTreeNode *node)
     return DoDecListDefCommon(specifier, {var_dec})[0];
 }
 
-// Returns the return types of the first statement.
+// Returns the return types of all statements.
 std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoCompSt(const KTreeNode *node)
 {
     // CompSt: L_BRACE DefList(Nullable) StmtList(Nullable) R_BRACE
@@ -914,29 +914,22 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoCompSt(const KTreeNode 
     return std::vector<VariableSymbolSharedPtr>();
 }
 
-// Returns the return types of the first statement.
+// Returns the return types of all statements.
 std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoStmtList(const KTreeNode *node)
 {
     // StmtList: Stmt StmtList(Nullable) | <NULL>
-    std::vector<VariableSymbolSharedPtr> statement_return_types;
-    bool is_first_statement = true;
+    std::vector<VariableSymbolSharedPtr> return_types;
 
     while (node != NULL)
     {
-        if (is_first_statement)
-        {
-            statement_return_types = DoStmt(node->l_child);
-            is_first_statement = false;
-        }
-        else
-        {
-            DoStmt(node->l_child);
-        }
+        auto current_return_types = DoStmt(node->l_child);
+
+        return_types.insert(return_types.cend(), current_return_types.begin(), current_return_types.end());
 
         node = node->r_child;
     }
 
-    return statement_return_types;
+    return return_types;
 }
 
 // [CHECKS] kErrorOperandTypeMismatch
@@ -951,7 +944,7 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoStmt(const KTreeNode *n
         if (node->l_child->value->ast_node_value.variable->type == VARIABLE_EXP)
         {
             DoExp(node->l_child);
-            return {nullptr};
+            return std::vector<VariableSymbolSharedPtr>();
         }
 
         // Stmt: CompSt
@@ -1017,7 +1010,7 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoStmt(const KTreeNode *n
         return DoStmt(node->r_child);
     }
     default:
-        return {nullptr};
+        return std::vector<VariableSymbolSharedPtr>();
     }
 }
 
