@@ -26,43 +26,6 @@ void SemanticAnalyse(KTreeNode *root, size_t current_level, void *user_arg)
     kSemanticAnalyser.Analyse(root, current_level, user_arg);
 }
 
-void PrintAstNode(KTreeNode *node, size_t current_level, void *)
-{
-    for (int i = 0; i < current_level; i++)
-    {
-        printf("  ");
-    }
-
-    if (node->value->is_token)
-    {
-        char token_name_buffer[TOKEN_NAME_BUFFER_SIZE];
-        Token *token = node->value->ast_node_value.token;
-        GetTokenName(token_name_buffer, token->type);
-
-        switch (token->type)
-        {
-        case TOKEN_ID:
-        case TOKEN_KEYWORD_TYPE_INT:
-        case TOKEN_KEYWORD_TYPE_FLOAT:
-        case TOKEN_LITERAL_INT:
-        case TOKEN_LITERAL_FP:
-            printf("%s: %s\n", token_name_buffer, token->value);
-            break;
-        default:
-            printf("%s\n", token_name_buffer);
-            break;
-        }
-    }
-    else
-    {
-        char variable_name_buffer[VARIABLE_NAME_BUFFER_SIZE];
-        GetVariableName(variable_name_buffer, node->value->ast_node_value.variable->type);
-        printf("%s (%d)\n",
-               variable_name_buffer,
-               node->value->ast_node_value.variable->line_start);
-    }
-}
-
 int main(int argc, char *argv[])
 {
     if (argc == 1)
@@ -90,14 +53,13 @@ int main(int argc, char *argv[])
         return FAILURE;
     }
 
-    KTreePreOrderTraverse(kRoot, PrintAstNode, NULL);
     KTreePreOrderTraverse(kRoot, SemanticAnalyse, NULL);
 
-    if (!kSemanticAnalyser.GetHasSemanticError())
-    {
-        kSemanticAnalyser.PrintStructDefSymbolTable();
-        kSemanticAnalyser.PrintSymbolTable();
-    }
+    // if (!kSemanticAnalyser.GetHasSemanticError())
+    // {
+    //     kSemanticAnalyser.PrintStructDefSymbolTable();
+    //     kSemanticAnalyser.PrintSymbolTable();
+    // }
 
     KTreeFree(kRoot, FreeKTreeNode);
 
