@@ -109,6 +109,9 @@ private:
     std::shared_ptr<FunctionSymbol> DoFunDec(const KTreeNode *node);
     std::vector<VariableSymbolSharedPtr> DoVarList(const KTreeNode *node);
     VariableSymbolSharedPtr DoParamDec(const KTreeNode *node);
+    std::vector<VariableSymbolSharedPtr> DoCompSt(const KTreeNode *node);
+    std::vector<VariableSymbolSharedPtr> DoStmtList(const KTreeNode *node);
+    std::vector<VariableSymbolSharedPtr> DoStmt(const KTreeNode *node);
     std::pair<VariableSymbolSharedPtr, bool> DoExp(const KTreeNode *node);
     std::vector<VariableSymbolSharedPtr> DoArgs(const KTreeNode *node);
 };

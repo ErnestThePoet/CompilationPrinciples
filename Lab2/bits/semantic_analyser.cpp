@@ -688,6 +688,95 @@ VariableSymbolSharedPtr SemanticAnalyser::DoParamDec(const KTreeNode *node)
     return DoDecListDefCommon(specifier, {var_dec})[0];
 }
 
+std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoCompSt(const KTreeNode *node)
+{
+}
+std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoStmtList(const KTreeNode *node)
+{
+}
+
+// [CHECKS] kErrorOperandTypeMismatch
+// If the statement is a return statement, returns a vector containing the return value type.
+// In the IF...ELSE... case which may contain two parallel return statements,
+// both return value types are stored in the vector.
+std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoStmt(const KTreeNode *node)
+{
+    if (!node->l_child->value->is_token)
+    {
+        // Stmt: Exp SEMICOLON
+        if (node->l_child->value->ast_node_value.variable->type == VARIABLE_EXP)
+        {
+            DoExp(node->l_child);
+            return {nullptr};
+        }
+
+        // Stmt: CompSt
+        return DoCompSt(node->l_child);
+    }
+
+    switch (node->l_child->value->ast_node_value.token->type)
+    {
+    // Stmt: RETURN Exp SEMICOLON
+    case TOKEN_KEYWORD_RETURN:
+    {
+        return {DoExp(node->l_child->r_sibling).first};
+    }
+    case TOKEN_KEYWORD_IF:
+    {
+        auto condition_exp_node = node->l_child->r_sibling->r_sibling;
+        auto if_stmt_node = condition_exp_node->r_sibling->r_sibling;
+
+        auto condition_exp = DoExp(condition_exp_node);
+
+        // condition expression errors do not stop further analysis or we will lose tons of information
+        if (condition_exp.first != nullptr)
+        {
+            if (!IsIntArithmeticSymbol(*condition_exp.first))
+            {
+                PrintError(kErrorOperandTypeMismatch,
+                           GetKTreeNodeLineNumber(condition_exp_node),
+                           "if condition expression must have 'int' type");
+            }
+        }
+
+        // Stmt: IF L_BRACKET Exp R_BRACKET Stmt
+        auto if_return_types = DoStmt(if_stmt_node);
+
+        if (if_stmt_node->r_sibling == NULL)
+        {
+            return if_return_types;
+        }
+
+        // Stmt: IF L_BRACKET Exp R_BRACKET Stmt ELSE Stmt
+        auto else_return_types = DoStmt(if_stmt_node->r_sibling->r_sibling);
+
+        if_return_types.insert(if_return_types.cend(), else_return_types.begin(), else_return_types.end());
+
+        return if_return_types;
+    }
+    // Stmt: WHILE L_BRACKET Exp R_BRACKET Stmt
+    case TOKEN_KEYWORD_WHILE:
+    {
+        auto condition_exp = DoExp(node->l_child->r_sibling->r_sibling);
+
+        // condition expression errors do not stop further analysis or we will lose tons of information
+        if (condition_exp.first != nullptr)
+        {
+            if (!IsIntArithmeticSymbol(*condition_exp.first))
+            {
+                PrintError(kErrorOperandTypeMismatch,
+                           GetKTreeNodeLineNumber(node->l_child->r_sibling->r_sibling),
+                           "while condition expression must have 'int' type");
+            }
+        }
+
+        return DoStmt(node->r_child);
+    }
+    default:
+        return {nullptr};
+    }
+}
+
 // [CHECKS] kErrorUndefinedVariable,
 //          kErrorUndefinedFunction,
 //          kErrorInvalidInvokeOperator,
