@@ -110,8 +110,8 @@ private:
     std::vector<VariableSymbolSharedPtr> DoExtDecList(const KTreeNode *node);
     VariableSymbolSharedPtr DoSpecifier(const KTreeNode *node);
     std::shared_ptr<StructSymbol> DoStructSpecifier(const KTreeNode *node);
-    std::vector<VariableSymbolSharedPtr> DoDefList(const KTreeNode *node);
-    std::vector<VariableSymbolSharedPtr> DoDef(const KTreeNode *node);
+    std::vector<VariableSymbolSharedPtr> DoDefList(const KTreeNode *node, const bool should_insert);
+    std::vector<VariableSymbolSharedPtr> DoDef(const KTreeNode *node, const bool should_insert);
     std::vector<VariableSymbolSharedPtr> DoDecList(const KTreeNode *node);
     VariableSymbolSharedPtr DoDec(const KTreeNode *node);
     VariableSymbolSharedPtr DoVarDec(const KTreeNode *node);

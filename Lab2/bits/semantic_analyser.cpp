@@ -608,7 +608,7 @@ std::shared_ptr<StructSymbol> SemanticAnalyser::DoStructSpecifier(const KTreeNod
 
         if (!def_list_node->value->is_token)
         {
-            fields = DoDefList(def_list_node);
+            fields = DoDefList(def_list_node, false);
         }
 
         // Checks kErrorDuplicateStructFieldName
@@ -658,14 +658,18 @@ std::shared_ptr<StructSymbol> SemanticAnalyser::DoStructSpecifier(const KTreeNod
     }
 }
 
+// Both CompSt and StructSpecifier references DefList and only with the former
+// do we need to insert symbols to table. That's why we have to add an extra argument should_insert,
+// making the method uglier.
 // Return a list of symbol definitions, each of which contains full symbol information.
-std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDefList(const KTreeNode *node)
+std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDefList(
+    const KTreeNode *node, const bool should_insert)
 {
     // DefList: Def DefList | <NULL>
     std::vector<VariableSymbolSharedPtr> defs;
     while (node != NULL)
     {
-        auto current_defs = DoDef(node->l_child);
+        auto current_defs = DoDef(node->l_child, should_insert);
         defs.insert(defs.cend(), current_defs.begin(), current_defs.end());
         node = node->r_child;
     }
@@ -673,16 +677,29 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDefList(const KTreeNode
     return defs;
 }
 
+// [INSERTS] VariableSymbol <VIA InsertVariableSymbol>
+// [CHECKS] kErrorDuplicateVariableName <VIA InsertVariableSymbol>
 // Return a list of symbol definitions, each of which contains full symbol information.
 // Type info is obtained by DoSpecifier, which is combined with each element
 // in the list returned by DoDecList with help of DoDecListDefCommon.
-std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDef(const KTreeNode *node)
+std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDef(
+    const KTreeNode *node, const bool should_insert)
 {
     // Def: Specifier DecList SEMICOLON
     auto specifier = DoSpecifier(node->l_child);
     auto dec_list = DoDecList(node->l_child->r_sibling);
 
-    return DoDecListDefCommon(specifier, dec_list);
+    auto defs = DoDecListDefCommon(specifier, dec_list);
+
+    if (should_insert)
+    {
+        for (auto &def : defs)
+        {
+            InsertVariableSymbol(def);
+        }
+    }
+
+    return defs;
 }
 
 // Returns a list of DoDec results.
@@ -822,17 +839,11 @@ VariableSymbolSharedPtr SemanticAnalyser::DoParamDec(const KTreeNode *node)
     return DoDecListDefCommon(specifier, {var_dec})[0];
 }
 
-// [INSERTS] VariableSymbol <VIA InsertVariableSymbol>
-// [CHECKS] kErrorDuplicateVariableName <VIA InsertVariableSymbol>
 // Returns the return types of the first statement.
 std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoCompSt(const KTreeNode *node)
 {
     // CompSt: L_BRACE DefList StmtList R_BRACE
-    auto defs = DoDefList(node->l_child->r_sibling);
-    for (auto &def : defs)
-    {
-        InsertVariableSymbol(def);
-    }
+    DoDefList(node->l_child->r_sibling, true);
 
     if (node->l_child->r_sibling->r_sibling->value->is_token)
     {
