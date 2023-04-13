@@ -51,8 +51,6 @@ private:
     void DoExtDefList(const KTreeNode *node);
     void DoExtDef(const KTreeNode *node);
     void DoExtDecList(const KTreeNode *node);
-    void DoSpecifier(const KTreeNode *node);
-    void DoStructSpecifier(const KTreeNode *node);
     void DoDefList(const KTreeNode *node);
     void DoDef(const KTreeNode *node);
     void DoDecList(const KTreeNode *node);
