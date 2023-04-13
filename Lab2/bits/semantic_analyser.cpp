@@ -710,7 +710,7 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDefList(
     while (node != NULL)
     {
         auto current_defs = DoDef(node->l_child, should_insert);
-        defs.insert(defs.cend(), current_defs.begin(), current_defs.end());
+        defs.insert(defs.cend(), current_defs.cbegin(), current_defs.cend());
         node = node->r_child;
     }
 
@@ -927,7 +927,7 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoStmtList(const KTreeNod
     {
         auto current_return_types = DoStmt(node->l_child);
 
-        return_types.insert(return_types.cend(), current_return_types.begin(), current_return_types.end());
+        return_types.insert(return_types.cend(), current_return_types.cbegin(), current_return_types.cend());
 
         node = node->r_child;
     }
@@ -990,7 +990,7 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoStmt(const KTreeNode *n
         // Stmt: IF L_BRACKET Exp R_BRACKET Stmt ELSE Stmt
         auto else_return_types = DoStmt(if_stmt_node->r_sibling->r_sibling);
 
-        if_return_types.insert(if_return_types.cend(), else_return_types.begin(), else_return_types.end());
+        if_return_types.insert(if_return_types.cend(), else_return_types.cbegin(), else_return_types.cend());
 
         return if_return_types;
     }
