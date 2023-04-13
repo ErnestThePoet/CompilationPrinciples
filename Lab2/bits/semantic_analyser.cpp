@@ -799,6 +799,9 @@ VariableSymbolSharedPtr SemanticAnalyser::DoVarDec(const KTreeNode *node)
     }
 
     // VarDec: VarDec L_SQUARE LITERAL_INT R_SQUARE
+
+    // Note that int a[2][3] should be interpreted as array<array<int,3>,2>,
+    // But ArraySymbol views it as array<array<int,2>,3>
     auto array_element = DoVarDec(node->l_child);
     if (array_element == nullptr)
     {
