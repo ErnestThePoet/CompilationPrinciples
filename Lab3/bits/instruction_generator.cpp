@@ -26,6 +26,11 @@ std::string InstructionGenerator::GenerateImm(const std::string &number) const
     return "#" + number;
 }
 
+std::string InstructionGenerator::GenerateImm(const int number) const
+{
+    return GenerateImm(std::to_string(number));
+}
+
 std::string InstructionGenerator::GenerateAssign(const std::string &left,
                                                  const std::string &right) const
 {

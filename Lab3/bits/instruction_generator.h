@@ -22,6 +22,7 @@ public:
     std::string GenerateLabel(const std::string &name) const;
     std::string GenerateFunction(const std::string &name) const;
     std::string GenerateImm(const std::string &number) const;
+    std::string GenerateImm(const int number) const;
     std::string GenerateAssign(const std::string &left,
                                const std::string &right) const;
     std::string GenerateBinaryOperation(const std::string binary_operator,
