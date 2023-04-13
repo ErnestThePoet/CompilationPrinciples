@@ -58,7 +58,8 @@
         "stdexcept": "cpp",
         "streambuf": "cpp",
         "cinttypes": "cpp",
-        "typeinfo": "cpp"
+        "typeinfo": "cpp",
+        "forward_list": "cpp"
     },
     "cmake.sourceDirectory": "${workspaceFolder}/Lab1"
 }

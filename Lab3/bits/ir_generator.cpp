@@ -333,18 +333,61 @@ IrSequence IrGenerator::DoExp(const KTreeNode *node, const bool force_singular =
         // Exp: SUB Exp ///////////////////////////////////////////////////
         if (node->l_child->value->ast_node_value.token->type == TOKEN_OPERATOR_SUB)
         {
-            DoExp(node->r_child);
+            auto expression = DoExp(node->r_child, true);
 
-            return;
+            if (force_singular)
+            {
+                auto variable_name = GetNextVariableName();
+                expression[expression.size() - 1] = instruction_generator_.GenerateAssign(
+                    variable_name,
+                    instruction_generator_.GenerateBinaryOperation(
+                        InstructionGenerator::kBinaryOperatorSub,
+                        instruction_generator_.GenerateImm(0),
+                        expression[expression.size() - 1]));
+                expression.push_back(variable_name);
+            }
+            else
+            {
+                expression[expression.size() - 1] = instruction_generator_.GenerateBinaryOperation(
+                    InstructionGenerator::kBinaryOperatorSub,
+                    instruction_generator_.GenerateImm(0),
+                    expression[expression.size() - 1]);
+            }
+
+            return expression;
         }
         ///////////////////////////////////////////////////////////////////
 
         // Exp: NOT Exp ///////////////////////////////////////////////////
         if (node->l_child->value->ast_node_value.token->type == TOKEN_OPERATOR_LOGICAL_NOT)
         {
-            DoExp(node->r_child);
+            auto expression = DoExp(node->r_child, true);
 
-            return;
+            auto result_variable_name = GetNextVariableName();
+            auto true_label = GetNextLabelName();
+            auto exit_label = GetNextLabelName();
+
+            expression[expression.size() - 1] = instruction_generator_.GenerateIf(
+                expression[expression.size() - 1],
+                true_label);
+
+            expression.push_back(instruction_generator_.GenerateAssign(
+                result_variable_name,
+                instruction_generator_.GenerateImm(1)));
+
+            expression.push_back(instruction_generator_.GenerateGoto(exit_label));
+
+            expression.push_back(instruction_generator_.GenerateLabel(true_label));
+
+            expression.push_back(instruction_generator_.GenerateAssign(
+                result_variable_name,
+                instruction_generator_.GenerateImm(0)));
+
+            expression.push_back(instruction_generator_.GenerateLabel(exit_label));
+
+            expression.push_back(result_variable_name);
+
+            return expression;
         }
         ///////////////////////////////////////////////////////////////////
 
