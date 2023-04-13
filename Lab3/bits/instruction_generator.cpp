@@ -75,9 +75,9 @@ std::string InstructionGenerator::GenerateArg(const std::string &value) const
     return "ARG " + value;
 }
 
-std::string InstructionGenerator::GenerateCall(const std::string &variable) const
+std::string InstructionGenerator::GenerateCall(const std::string &function_name) const
 {
-    return "CALL " + variable;
+    return "CALL " + function_name;
 }
 
 std::string InstructionGenerator::GenerateParam(const std::string &variable) const
