@@ -60,9 +60,12 @@ private:
     static constexpr int kErrorUndefinedStruct = 17;          // Impled
 
 public:
-    SemanticAnalyser() : is_started_(false),
-                         has_error_(false),
-                         mt19937_(random_device_()) {}
+    SemanticAnalyser(const SymbolTable &builtin_symbols) : is_started_(false),
+                                                           has_error_(false),
+                                                           symbol_table_(builtin_symbols),
+                                                           mt19937_(random_device_()) {}
+    SemanticAnalyser() : SemanticAnalyser(SymbolTable()) {}
+    
     void Analyse(const KTreeNode *node);
 
     // Debug only

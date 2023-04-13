@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <memory>
 
 extern "C"
 {
@@ -15,7 +16,29 @@ extern "C"
 KTreeNode *kRoot = NULL;
 bool kHasLexicalError = false;
 bool kHasSyntaxError = false;
-SemanticAnalyser kSemanticAnalyser;
+
+SemanticAnalyser kSemanticAnalyser(
+    {{"read",
+      std::make_shared<FunctionSymbol>(
+          -1,
+          "read",
+          std::vector<VariableSymbolSharedPtr>(),
+          std::make_shared<ArithmeticSymbol>(
+              -1,
+              "",
+              ArithmeticSymbolType::INT))},
+     {"write",
+      std::make_shared<FunctionSymbol>(
+          -1,
+          "write",
+          std::vector<VariableSymbolSharedPtr>({std::make_shared<ArithmeticSymbol>(
+              -1,
+              "value",
+              ArithmeticSymbolType::INT)}),
+          std::make_shared<ArithmeticSymbol>(
+              -1,
+              "",
+              ArithmeticSymbolType::INT))}});
 
 void FreeKTreeNode(KTreeNodeValue *node)
 {
