@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 extern "C"
 {
@@ -12,6 +13,7 @@ extern "C"
 }
 
 #include "../../Lab2/bits/semantic_analyser.h"
+#include "instruction_generator.h"
 
 using IrSequence = std::vector<std::string>;
 
@@ -23,6 +25,14 @@ private:
     const SymbolTable symbol_table_;
     const StructDefSymbolTable struct_def_symbol_table_;
 
+    // Maps symbol name to IR variable name
+    std::unordered_map<std::string, std::string> ir_variable_table_;
+
+    InstructionGenerator instruction_generator_;
+
+    size_t next_variable_id_;
+    size_t next_label_id_;
+
     IrSequence ir_sequence_;
 
 public:
@@ -31,6 +41,8 @@ public:
         : is_started_(false),
           has_error_(false),
           symbol_table_(symbol_table),
+          next_variable_id_(0),
+          next_label_id_(0),
           struct_def_symbol_table_(struct_def_symbol_table) {}
 
     void Generate(const KTreeNode *node);
@@ -46,6 +58,9 @@ public:
     }
 
 private:
+    std::string GetNextVariableName();
+    std::string GetNextLabelName();
+    void ConcatenateIrSequence(IrSequence &seq1, const IrSequence &seq2) const;
     void AddIrInstruction(const std::string &instruction);
 
     void DoExtDefList(const KTreeNode *node);
@@ -62,6 +77,6 @@ private:
     void DoCompSt(const KTreeNode *node);
     void DoStmtList(const KTreeNode *node);
     void DoStmt(const KTreeNode *node);
-    void DoExp(const KTreeNode *node);
-    void DoArgs(const KTreeNode *node);
+    IrSequence DoExp(const KTreeNode *node, const bool force_singular = false);
+    std::vector<IrSequence> DoArgs(const KTreeNode *node);
 };

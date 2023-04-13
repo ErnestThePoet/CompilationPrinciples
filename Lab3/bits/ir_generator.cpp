@@ -1,5 +1,25 @@
 #include "ir_generator.h"
 
+std::string IrGenerator::GetNextVariableName()
+{
+    return "var" + std::to_string(next_variable_id_++);
+}
+
+std::string IrGenerator::GetNextLabelName()
+{
+    return "label" + std::to_string(next_label_id_++);
+}
+
+void IrGenerator::ConcatenateIrSequence(IrSequence &seq1, const IrSequence &seq2) const
+{
+    seq1.insert(seq1.cbegin(), seq2.cbegin(), seq2.cend());
+}
+
+void IrGenerator::AddIrInstruction(const std::string &instruction)
+{
+    ir_sequence_.push_back(instruction);
+}
+
 void IrGenerator::DoExtDefList(const KTreeNode *node)
 {
     // ExtDefList: ExtDef ExtDefList(Nullable) | <NULL>
@@ -227,31 +247,34 @@ void IrGenerator::DoStmt(const KTreeNode *node)
     }
 }
 
-void IrGenerator::DoExp(const KTreeNode *node)
+// Returns an IR sequence for computing the expression value.
+// The last IR instruction in the returned sequence is guaranteed to be the exp value.
+// if force_singular is true, then the last IR instruction will be either a variable or an imm.
+IrSequence IrGenerator::DoExp(const KTreeNode *node, const bool force_singular = false)
 {
-    const std::pair<VariableSymbolSharedPtr, bool> kNullptrFalse = {nullptr, false};
-
     if (node->l_child->value->is_token)
     {
         // Exp: ID | LITERAL_INT | LITERAL_FP /////////////////////////////
         if (node->r_child == NULL)
         {
+            std::string token_value = node->l_child->value->ast_node_value.token->value;
+
             switch (node->l_child->value->ast_node_value.token->type)
             {
             case TOKEN_ID:
             {
-                return;
+                return {ir_variable_table_.at(token_value)};
             }
             case TOKEN_LITERAL_INT:
             {
-                return;
+                return {instruction_generator_.GenerateImm(token_value)};
             }
             case TOKEN_LITERAL_FP:
             {
-                return;
+                return {instruction_generator_.GenerateImm(token_value)};
             }
             default:
-                return;
+                return {};
             }
         }
         ///////////////////////////////////////////////////////////////////
@@ -265,20 +288,45 @@ void IrGenerator::DoExp(const KTreeNode *node)
         {
             std::string function_name = node->l_child->value->ast_node_value.token->value;
 
-            // Check args
+            IrSequence call_ir_sequence;
+
             // Call with args
             auto args_node = node->l_child->r_sibling->r_sibling;
             if (!args_node->value->is_token)
             {
-                DoArgs(args_node);
+                auto args = DoArgs(args_node);
 
-                return;
+                // Concatenate preparation code, excluding the traling singular exp
+                for (auto &arg : args)
+                {
+                    call_ir_sequence.insert(call_ir_sequence.cbegin(), arg.cbegin(), arg.cend() - 1);
+                }
+
+                // Retrieve arg singular exp in reverse order
+                for (auto i = args.rbegin(); i != args.rend(); ++i)
+                {
+                    call_ir_sequence.push_back(
+                        instruction_generator_.GenerateArg(
+                            i->at(i->size() - 1)));
+                }
             }
-            // Call with no args
+
+            // Shared logic with call with no args
+            if (force_singular)
+            {
+                auto return_value_variable_name = GetNextVariableName();
+                call_ir_sequence.push_back(
+                    instruction_generator_.GenerateAssign(
+                        return_value_variable_name,
+                        instruction_generator_.GenerateCall(function_name)));
+                call_ir_sequence.push_back(return_value_variable_name);
+            }
             else
             {
-                return;
+                call_ir_sequence.push_back(instruction_generator_.GenerateCall(function_name));
             }
+
+            return call_ir_sequence;
         }
         ///////////////////////////////////////////////////////////////////
 
@@ -374,12 +422,15 @@ void IrGenerator::DoExp(const KTreeNode *node)
     }
 }
 
-void IrGenerator::DoArgs(const KTreeNode *node)
+std::vector<IrSequence> IrGenerator::DoArgs(const KTreeNode *node)
 {
+    std::vector<IrSequence> args;
     // Args: Exp COMMA Args | Exp
     while (node != NULL)
     {
-        DoExp(node->l_child);
+        args.push_back(DoExp(node->l_child, true));
         node = node->r_child;
     }
+
+    return args;
 }
