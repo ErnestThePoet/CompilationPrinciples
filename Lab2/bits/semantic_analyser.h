@@ -25,6 +25,7 @@ extern "C"
 #include "./symbols/function_symbol.h"
 #include "./symbols/struct_symbol.h"
 #include "./symbols/struct_def_symbol.h"
+#include "./symbols/symbol_type.h"
 
 using SymbolTable = std::unordered_map<std::string, VariableSymbolSharedPtr>;
 using StructDefSymbolTable = std::unordered_map<std::string, StructDefSymbolSharedPtr>;
