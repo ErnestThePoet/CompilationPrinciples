@@ -40,7 +40,7 @@ private:
     std::random_device random_device_;
     std::mt19937 mt19937_;
     std::uniform_int_distribution<> distribution_;
-    
+
     // Along with the detailed explanations for duplicate names in textbook,
     // we hold that struct definitions and other symbols are essentially
     // different, and a same name in two tables is not seen as a conflict.
@@ -69,7 +69,15 @@ public:
                                                            symbol_table_(builtin_symbols),
                                                            mt19937_(random_device_()) {}
     SemanticAnalyser() : SemanticAnalyser(SymbolTable()) {}
-    
+
+    ~SemanticAnalyser() = default;
+
+    SemanticAnalyser(const SemanticAnalyser &) = default;
+    SemanticAnalyser &operator=(const SemanticAnalyser &);
+
+    SemanticAnalyser(SemanticAnalyser &&) = default;
+    SemanticAnalyser &operator=(SemanticAnalyser &&);
+
     void Analyse(const KTreeNode *node);
 
     // Debug only

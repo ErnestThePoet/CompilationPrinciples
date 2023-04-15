@@ -63,6 +63,14 @@ public:
           next_label_id_(0),
           struct_def_symbol_table_(struct_def_symbol_table) {}
 
+    ~IrGenerator() = default;
+
+    IrGenerator(const IrGenerator &) = default;
+    IrGenerator &operator=(const IrGenerator &);
+
+    IrGenerator(IrGenerator &&) = default;
+    IrGenerator &operator=(IrGenerator &&);
+
     void Generate(const KTreeNode *node);
 
     bool GetHasError() const
