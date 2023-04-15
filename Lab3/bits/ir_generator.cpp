@@ -170,54 +170,106 @@ bool IrGenerator::DoExtDef(const KTreeNode *node)
         DoCompSt(node->l_child->r_sibling->r_sibling);
     }
 }
-// todo
-IrSequenceGenerationResult IrGenerator::DoExtDecList(const KTreeNode *node)
+
+std::vector<std::string> IrGenerator::DoExtDecList(const KTreeNode *node)
 {
+    std::vector<std::string> ext_decs;
     // ExtDecList: VarDec | VarDec COMMA ExtDecList
     while (node != NULL)
     {
-        DoVarDec(node->l_child);
+        ext_decs.push_back(DoVarDec(node->l_child));
         node = node->r_child;
     }
+
+    return ext_decs;
 }
-// todo
+
 IrSequenceGenerationResult IrGenerator::DoDefList(const KTreeNode *node)
 {
+    IrSequence sequence;
     // DefList: Def DefList(Nullable) | <NULL>
     while (node != NULL)
     {
-        DoDef(node->l_child);
+        auto def = DoDef(node->l_child);
+        if (!def.first)
+        {
+            return kErrorIrSequenceGenerationResult;
+        }
+
         node = node->r_child;
     }
+
+    return {true, sequence};
 }
-// todo
+
 IrSequenceGenerationResult IrGenerator::DoDef(const KTreeNode *node)
 {
     // Def: Specifier DecList SEMICOLON
-    DoDecList(node->l_child->r_sibling);
+    return DoDecList(node->l_child->r_sibling);
 }
-// todo
+
 IrSequenceGenerationResult IrGenerator::DoDecList(const KTreeNode *node)
 {
+    IrSequence sequence;
     // DecList: Dec | Dec COMMA DecList
     while (node != NULL)
     {
-        DoDec(node->l_child);
+        auto dec = DoDec(node->l_child);
+        if (!dec.first)
+        {
+            return kErrorIrSequenceGenerationResult;
+        }
+
+        ConcatenateIrSequence(sequence, dec.second);
+
         node = node->r_child;
     }
+
+    return {true, sequence};
 }
-// todo
+
+// [INSERTS-IR-VARIABLE]
 IrSequenceGenerationResult IrGenerator::DoDec(const KTreeNode *node)
 {
     // Dec: VarDec | VarDec ASSIGN Exp
     auto var_dec = DoVarDec(node->l_child);
 
-    if (node->l_child->r_sibling == NULL)
+    IrSequence sequence;
+
+    auto symbol = symbol_table_.at(var_dec);
+    auto variable_name = GetNextVariableName();
+    ir_variable_table_[symbol->GetName()] = variable_name;
+
+    switch (symbol->GetVariableSymbolType())
     {
-        return;
+    case VariableSymbolType::ARRAY:
+    case VariableSymbolType::STRUCT:
+    {
+        sequence.push_back(instruction_generator_.GenerateDec(
+            variable_name,
+            GetVariableSize(*symbol)));
+        break;
+    }
     }
 
-    DoExp(node->l_child->r_sibling->r_sibling);
+    if (node->l_child->r_sibling == NULL)
+    {
+        return {true, sequence};
+    }
+
+    auto expression = DoExp(node->l_child->r_sibling->r_sibling, false, false);
+    if (!expression)
+    {
+        return {false, IrSequence()};
+    }
+
+    ConcatenateIrSequence(sequence, expression->GetPreparationSequence());
+
+    sequence.push_back(instruction_generator_.GenerateAssign(
+        variable_name,
+        expression->GetFinalValue()));
+
+    return {true, sequence};
 }
 
 std::string IrGenerator::DoVarDec(const KTreeNode *node)
@@ -267,7 +319,6 @@ IrSequenceGenerationResult IrGenerator::DoParamDec(const KTreeNode *node)
 
 IrSequenceGenerationResult IrGenerator::DoCompSt(const KTreeNode *node)
 {
-    IrSequenceGenerationResult kErrorReturnValue = {false, IrSequence()};
     // CompSt: L_BRACE DefList(Nullable) StmtList(Nullable) R_BRACE
 
     IrSequence sequence;
@@ -281,7 +332,7 @@ IrSequenceGenerationResult IrGenerator::DoCompSt(const KTreeNode *node)
             auto def_list = DoDefList(node->l_child->r_sibling);
             if (!def_list.first)
             {
-                return kErrorReturnValue;
+                return kErrorIrSequenceGenerationResult;
             }
 
             ConcatenateIrSequence(sequence, def_list.second);
@@ -292,7 +343,7 @@ IrSequenceGenerationResult IrGenerator::DoCompSt(const KTreeNode *node)
                 auto statement_list = DoStmtList(node->l_child->r_sibling->r_sibling);
                 if (!statement_list.first)
                 {
-                    return kErrorReturnValue;
+                    return kErrorIrSequenceGenerationResult;
                 }
 
                 ConcatenateIrSequence(sequence, statement_list.second);
@@ -305,7 +356,7 @@ IrSequenceGenerationResult IrGenerator::DoCompSt(const KTreeNode *node)
             auto statement_list = DoStmtList(node->l_child->r_sibling);
             if (!statement_list.first)
             {
-                return kErrorReturnValue;
+                return kErrorIrSequenceGenerationResult;
             }
 
             ConcatenateIrSequence(sequence, statement_list.second);
@@ -339,8 +390,6 @@ IrSequenceGenerationResult IrGenerator::DoStmtList(const KTreeNode *node)
 
 IrSequenceGenerationResult IrGenerator::DoStmt(const KTreeNode *node)
 {
-    IrSequenceGenerationResult kErrorReturnValue = {false, IrSequence()};
-
     if (!node->l_child->value->is_token)
     {
         // Stmt: Exp SEMICOLON
@@ -349,7 +398,7 @@ IrSequenceGenerationResult IrGenerator::DoStmt(const KTreeNode *node)
             auto expression = DoExp(node->l_child, false, false);
             if (!expression)
             {
-                return kErrorReturnValue;
+                return kErrorIrSequenceGenerationResult;
             }
 
             // We do not need the final value
@@ -370,7 +419,7 @@ IrSequenceGenerationResult IrGenerator::DoStmt(const KTreeNode *node)
         auto expression = DoExp(node->l_child->r_sibling, true, false);
         if (!expression)
         {
-            return kErrorReturnValue;
+            return kErrorIrSequenceGenerationResult;
         }
 
         auto sequence = expression->GetPreparationSequence();
@@ -387,14 +436,14 @@ IrSequenceGenerationResult IrGenerator::DoStmt(const KTreeNode *node)
         auto condition = DoExp(condition_exp_node, false, false);
         if (!condition)
         {
-            return kErrorReturnValue;
+            return kErrorIrSequenceGenerationResult;
         }
 
         // Stmt: IF L_BRACKET Exp R_BRACKET Stmt
         auto statement = DoStmt(if_stmt_node);
         if (!statement.first)
         {
-            return kErrorReturnValue;
+            return kErrorIrSequenceGenerationResult;
         }
 
         IrSequence sequence_single_branch = condition->GetPreparationSequence();
@@ -428,7 +477,7 @@ IrSequenceGenerationResult IrGenerator::DoStmt(const KTreeNode *node)
         auto else_statemtnt = DoStmt(if_stmt_node->r_sibling->r_sibling);
         if (!else_statemtnt.first)
         {
-            return kErrorReturnValue;
+            return kErrorIrSequenceGenerationResult;
         }
 
         ConcatenateIrSequence(sequence_dual_branch, else_statemtnt.second);
@@ -449,13 +498,13 @@ IrSequenceGenerationResult IrGenerator::DoStmt(const KTreeNode *node)
         auto condition = DoExp(node->l_child->r_sibling->r_sibling, false, false);
         if (!condition)
         {
-            return kErrorReturnValue;
+            return kErrorIrSequenceGenerationResult;
         }
 
         auto statement = DoStmt(node->r_child);
         if (!statement.first)
         {
-            return kErrorReturnValue;
+            return kErrorIrSequenceGenerationResult;
         }
 
         auto test_label = GetNextLabelName();
@@ -479,7 +528,7 @@ IrSequenceGenerationResult IrGenerator::DoStmt(const KTreeNode *node)
         return {true, sequence};
     }
     default:
-        return kErrorReturnValue;
+        return kErrorIrSequenceGenerationResult;
     }
 }
 

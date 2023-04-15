@@ -51,6 +51,8 @@ private:
 
     IrSequence ir_sequence_;
 
+    IrSequenceGenerationResult kErrorIrSequenceGenerationResult = {false, IrSequence()};
+
 public:
     IrGenerator(const SymbolTable &symbol_table,
                 const StructDefSymbolTable &struct_def_symbol_table)
@@ -87,12 +89,12 @@ private:
 
     void DoExtDefList(const KTreeNode *node);
     bool DoExtDef(const KTreeNode *node);
-    IrSequenceGenerationResult DoExtDecList(const KTreeNode *node);
+    std::vector<std::string> DoExtDecList(const KTreeNode *node);
     IrSequenceGenerationResult DoDefList(const KTreeNode *node);
     IrSequenceGenerationResult DoDef(const KTreeNode *node);
     IrSequenceGenerationResult DoDecList(const KTreeNode *node);
     IrSequenceGenerationResult DoDec(const KTreeNode *node);
-    IrSequenceGenerationResult DoVarDec(const KTreeNode *node);
+    std::string DoVarDec(const KTreeNode *node);
     IrSequenceGenerationResult DoFunDec(const KTreeNode *node);
     IrSequenceGenerationResult DoVarList(const KTreeNode *node);
     IrSequenceGenerationResult DoParamDec(const KTreeNode *node);
