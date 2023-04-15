@@ -150,7 +150,8 @@ void IrGenerator::DoExtDefList(const KTreeNode *node)
     }
 }
 
-void IrGenerator::DoExtDef(const KTreeNode *node)
+// [INSERTS-IR]
+bool IrGenerator::DoExtDef(const KTreeNode *node)
 {
     // ExtDef: Specifier SEMICOLON
     // ignored
@@ -169,7 +170,7 @@ void IrGenerator::DoExtDef(const KTreeNode *node)
     }
 }
 
-void IrGenerator::DoExtDecList(const KTreeNode *node)
+bool IrGenerator::DoExtDecList(const KTreeNode *node)
 {
     // ExtDecList: VarDec | VarDec COMMA ExtDecList
     while (node != NULL)
@@ -179,7 +180,7 @@ void IrGenerator::DoExtDecList(const KTreeNode *node)
     }
 }
 
-void IrGenerator::DoDefList(const KTreeNode *node)
+bool IrGenerator::DoDefList(const KTreeNode *node)
 {
     // DefList: Def DefList(Nullable) | <NULL>
     while (node != NULL)
@@ -189,13 +190,13 @@ void IrGenerator::DoDefList(const KTreeNode *node)
     }
 }
 
-void IrGenerator::DoDef(const KTreeNode *node)
+bool IrGenerator::DoDef(const KTreeNode *node)
 {
     // Def: Specifier DecList SEMICOLON
     DoDecList(node->l_child->r_sibling);
 }
 
-void IrGenerator::DoDecList(const KTreeNode *node)
+bool IrGenerator::DoDecList(const KTreeNode *node)
 {
     // DecList: Dec | Dec COMMA DecList
     while (node != NULL)
@@ -205,7 +206,7 @@ void IrGenerator::DoDecList(const KTreeNode *node)
     }
 }
 
-void IrGenerator::DoDec(const KTreeNode *node)
+bool IrGenerator::DoDec(const KTreeNode *node)
 {
     // Dec: VarDec | VarDec ASSIGN Exp
     DoVarDec(node->l_child);
@@ -218,7 +219,7 @@ void IrGenerator::DoDec(const KTreeNode *node)
     DoExp(node->l_child->r_sibling->r_sibling);
 }
 
-void IrGenerator::DoVarDec(const KTreeNode *node)
+bool IrGenerator::DoVarDec(const KTreeNode *node)
 {
     // VarDec: ID
     if (node->l_child->value->is_token &&
@@ -234,7 +235,7 @@ void IrGenerator::DoVarDec(const KTreeNode *node)
     DoVarDec(node->l_child);
 }
 
-void IrGenerator::DoFunDec(const KTreeNode *node)
+bool IrGenerator::DoFunDec(const KTreeNode *node)
 {
     std::string function_name = node->l_child->value->ast_node_value.token->value;
 
@@ -250,7 +251,7 @@ void IrGenerator::DoFunDec(const KTreeNode *node)
     }
 }
 
-void IrGenerator::DoVarList(const KTreeNode *node)
+bool IrGenerator::DoVarList(const KTreeNode *node)
 {
     // VarList: ParamDec COMMA VarList | ParamDec
     while (node != NULL)
@@ -260,13 +261,13 @@ void IrGenerator::DoVarList(const KTreeNode *node)
     }
 }
 
-void IrGenerator::DoParamDec(const KTreeNode *node)
+bool IrGenerator::DoParamDec(const KTreeNode *node)
 {
     // ParamDec: Specifier VarDec
     DoVarDec(node->r_child);
 }
 
-void IrGenerator::DoCompSt(const KTreeNode *node)
+std::pair<bool, IrSequence> IrGenerator::DoCompSt(const KTreeNode *node)
 {
     // CompSt: L_BRACE DefList(Nullable) StmtList(Nullable) R_BRACE
 
@@ -299,30 +300,49 @@ void IrGenerator::DoCompSt(const KTreeNode *node)
     // Both DefList and StmtList are NULL
 }
 
-void IrGenerator::DoStmtList(const KTreeNode *node)
+std::pair<bool, IrSequence> IrGenerator::DoStmtList(const KTreeNode *node)
 {
+    IrSequence sequence;
     // StmtList: Stmt StmtList(Nullable) | <NULL>
     while (node != NULL)
     {
-        DoStmt(node->l_child);
+        auto statement = DoStmt(node->l_child);
+        if (!statement.first)
+        {
+            return {
+                false,
+                IrSequence()};
+        }
+
+        ConcatenateIrSequence(sequence, statement.second);
         node = node->r_child;
     }
 }
 
-void IrGenerator::DoStmt(const KTreeNode *node)
+// Returns <no error, ir sequence>
+std::pair<bool, IrSequence> IrGenerator::DoStmt(const KTreeNode *node)
 {
+    std::pair<bool, IrSequence> kErrorReturnValue = {false, IrSequence()};
+
     if (!node->l_child->value->is_token)
     {
         // Stmt: Exp SEMICOLON
         if (node->l_child->value->ast_node_value.variable->type == VARIABLE_EXP)
         {
-            DoExp(node->l_child);
-            return;
+            auto expression = DoExp(node->l_child, false, false);
+            if (expression == nullptr)
+            {
+                return kErrorReturnValue;
+            }
+
+            // We do not need the final value
+            return {
+                true,
+                expression->GetPreparationSequence()};
         }
 
         // Stmt: CompSt
-        DoCompSt(node->l_child);
-        return;
+        return DoCompSt(node->l_child);
     }
 
     switch (node->l_child->value->ast_node_value.token->type)
@@ -330,40 +350,119 @@ void IrGenerator::DoStmt(const KTreeNode *node)
     // Stmt: RETURN Exp SEMICOLON
     case TOKEN_KEYWORD_RETURN:
     {
-        DoExp(node->l_child->r_sibling);
-        return;
+        auto expression = DoExp(node->l_child->r_sibling, true, false);
+        if (expression == nullptr)
+        {
+            return kErrorReturnValue;
+        }
+
+        auto sequence = expression->GetPreparationSequence();
+        sequence.push_back(instruction_generator_.GenerateReturn(
+            expression->GetFinalValue()));
+
+        return {true, sequence};
     }
     case TOKEN_KEYWORD_IF:
     {
         auto condition_exp_node = node->l_child->r_sibling->r_sibling;
         auto if_stmt_node = condition_exp_node->r_sibling->r_sibling;
 
-        DoExp(condition_exp_node);
+        auto condition = DoExp(condition_exp_node, false, false);
+        if (condition == nullptr)
+        {
+            return kErrorReturnValue;
+        }
 
         // Stmt: IF L_BRACKET Exp R_BRACKET Stmt
-        DoStmt(if_stmt_node);
+        auto statement = DoStmt(if_stmt_node);
+        if (!statement.first)
+        {
+            return kErrorReturnValue;
+        }
+
+        IrSequence sequence_single_branch = condition->GetPreparationSequence();
+        IrSequence sequence_dual_branch = condition->GetPreparationSequence();
+
+        auto true_label = GetNextLabelName();
+        auto exit_label = GetNextLabelName();
+
+        sequence_single_branch.push_back(instruction_generator_.GenerateIf(
+            condition->GetFinalValue(),
+            true_label));
+
+        sequence_dual_branch.push_back(instruction_generator_.GenerateIf(
+            condition->GetFinalValue(),
+            true_label));
+
+        sequence_single_branch.push_back(instruction_generator_.GenerateGoto(exit_label));
+
+        sequence_single_branch.push_back(instruction_generator_.GenerateLabel(true_label));
+
+        ConcatenateIrSequence(sequence_single_branch, statement.second);
+
+        sequence_single_branch.push_back(instruction_generator_.GenerateLabel(exit_label));
 
         if (if_stmt_node->r_sibling == NULL)
         {
-            return;
+            return {true, sequence_single_branch};
         }
 
         // Stmt: IF L_BRACKET Exp R_BRACKET Stmt ELSE Stmt
-        DoStmt(if_stmt_node->r_sibling->r_sibling);
+        auto else_statemtnt = DoStmt(if_stmt_node->r_sibling->r_sibling);
+        if (!else_statemtnt.first)
+        {
+            return kErrorReturnValue;
+        }
 
-        return;
+        ConcatenateIrSequence(sequence_dual_branch, else_statemtnt.second);
+
+        sequence_dual_branch.push_back(instruction_generator_.GenerateGoto(exit_label));
+
+        sequence_dual_branch.push_back(instruction_generator_.GenerateLabel(true_label));
+
+        ConcatenateIrSequence(sequence_dual_branch, statement.second);
+
+        sequence_dual_branch.push_back(instruction_generator_.GenerateLabel(exit_label));
+
+        return {true, sequence_dual_branch};
     }
     // Stmt: WHILE L_BRACKET Exp R_BRACKET Stmt
     case TOKEN_KEYWORD_WHILE:
     {
-        DoExp(node->l_child->r_sibling->r_sibling);
+        auto condition = DoExp(node->l_child->r_sibling->r_sibling, false, false);
+        if (condition == nullptr)
+        {
+            return kErrorReturnValue;
+        }
 
-        DoStmt(node->r_child);
+        auto statement = DoStmt(node->r_child);
+        if (!statement.first)
+        {
+            return kErrorReturnValue;
+        }
 
-        return;
+        auto test_label = GetNextLabelName();
+        auto body_label = GetNextLabelName();
+        auto exit_label = GetNextLabelName();
+
+        IrSequence sequence = condition->GetPreparationSequence();
+
+        sequence.push_back(instruction_generator_.GenerateLabel(test_label));
+        sequence.push_back(instruction_generator_.GenerateIf(
+            condition->GetFinalValue(),
+            body_label));
+        sequence.push_back(instruction_generator_.GenerateGoto(exit_label));
+        sequence.push_back(instruction_generator_.GenerateLabel(body_label));
+
+        ConcatenateIrSequence(sequence, statement.second);
+
+        sequence.push_back(instruction_generator_.GenerateGoto(test_label));
+        sequence.push_back(instruction_generator_.GenerateLabel(exit_label));
+
+        return {true, sequence};
     }
     default:
-        return;
+        return kErrorReturnValue;
     }
 }
 
@@ -383,6 +482,11 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
                                      const bool force_singular,
                                      const bool singular_no_prefix)
 {
+    const auto kLogicOperationResultType = std::make_shared<ArithmeticSymbol>(
+        -1,
+        "",
+        ArithmeticSymbolType::INT);
+
     if (node->l_child->value->is_token)
     {
         // Exp: ID | LITERAL_INT | LITERAL_FP /////////////////////////////
@@ -648,10 +752,7 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
             return std::make_shared<ExpValue>(
                 preparation_sequence,
                 result_variable_name,
-                std::make_shared<ArithmeticSymbol>(
-                    -1,
-                    "",
-                    ArithmeticSymbolType::INT));
+                kLogicOperationResultType);
         }
         ///////////////////////////////////////////////////////////////////
 
@@ -881,6 +982,7 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
         ConcatenateIrSequence(preparation_sequence, r_exp->GetPreparationSequence());
 
         auto operator_type = second_child->value->ast_node_value.token->type;
+        bool is_relop = false;
 
         switch (operator_type)
         {
@@ -952,10 +1054,7 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
             return std::make_shared<ExpValue>(
                 preparation_sequence,
                 result_variable_name,
-                std::make_shared<ArithmeticSymbol>(
-                    -1,
-                    "",
-                    ArithmeticSymbolType::INT));
+                kLogicOperationResultType);
         }
         case TOKEN_OPERATOR_LOGICAL_OR:
         {
@@ -988,10 +1087,7 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
             return std::make_shared<ExpValue>(
                 preparation_sequence,
                 result_variable_name,
-                std::make_shared<ArithmeticSymbol>(
-                    -1,
-                    "",
-                    ArithmeticSymbolType::INT));
+                kLogicOperationResultType);
         }
         case TOKEN_OPERATOR_REL_EQ:
         case TOKEN_OPERATOR_REL_GE:
@@ -1000,40 +1096,46 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
         case TOKEN_OPERATOR_REL_LT:
         case TOKEN_OPERATOR_REL_NE:
         {
-            auto binary_operator = GetBinaryOperator(operator_type);
+            // For relop, when singular is not forced, we can also generate a final value
+            // in the form of binary operation
+            if (force_singular)
+            {
+                auto binary_operator = GetBinaryOperator(operator_type);
 
-            auto result_variable_name = GetNextVariableName();
-            auto true_label = GetNextLabelName();
-            auto exit_label = GetNextLabelName();
+                auto result_variable_name = GetNextVariableName();
+                auto true_label = GetNextLabelName();
+                auto exit_label = GetNextLabelName();
 
-            preparation_sequence.push_back(instruction_generator_.GenerateIf(
-                instruction_generator_.GenerateBinaryOperation(
-                    binary_operator,
-                    l_exp->GetFinalValue(),
-                    r_exp->GetFinalValue()),
-                true_label));
+                preparation_sequence.push_back(instruction_generator_.GenerateIf(
+                    instruction_generator_.GenerateBinaryOperation(
+                        binary_operator,
+                        l_exp->GetFinalValue(),
+                        r_exp->GetFinalValue()),
+                    true_label));
 
-            preparation_sequence.push_back(instruction_generator_.GenerateAssign(
-                result_variable_name,
-                instruction_generator_.GenerateImm(0)));
+                preparation_sequence.push_back(instruction_generator_.GenerateAssign(
+                    result_variable_name,
+                    instruction_generator_.GenerateImm(0)));
 
-            preparation_sequence.push_back(instruction_generator_.GenerateGoto(exit_label));
+                preparation_sequence.push_back(instruction_generator_.GenerateGoto(exit_label));
 
-            preparation_sequence.push_back(instruction_generator_.GenerateLabel(true_label));
+                preparation_sequence.push_back(instruction_generator_.GenerateLabel(true_label));
 
-            preparation_sequence.push_back(instruction_generator_.GenerateAssign(
-                result_variable_name,
-                instruction_generator_.GenerateImm(1)));
+                preparation_sequence.push_back(instruction_generator_.GenerateAssign(
+                    result_variable_name,
+                    instruction_generator_.GenerateImm(1)));
 
-            preparation_sequence.push_back(instruction_generator_.GenerateLabel(exit_label));
+                preparation_sequence.push_back(instruction_generator_.GenerateLabel(exit_label));
 
-            return std::make_shared<ExpValue>(
-                preparation_sequence,
-                result_variable_name,
-                std::make_shared<ArithmeticSymbol>(
-                    -1,
-                    "",
-                    ArithmeticSymbolType::INT));
+                return std::make_shared<ExpValue>(
+                    preparation_sequence,
+                    result_variable_name,
+                    kLogicOperationResultType);
+            }
+            else
+            {
+                is_relop = true;
+            }
         }
         case TOKEN_OPERATOR_ADD:
         case TOKEN_OPERATOR_SUB:
@@ -1065,7 +1167,7 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
                         binary_operator,
                         l_exp->GetFinalValue(),
                         r_exp->GetFinalValue()),
-                    l_exp->GetSourceType());
+                    is_relop ? kLogicOperationResultType : l_exp->GetSourceType());
             }
         }
 

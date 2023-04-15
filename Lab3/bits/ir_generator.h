@@ -83,20 +83,21 @@ private:
     void ConcatenateIrSequence(IrSequence &seq1, const IrSequence &seq2) const;
     void AddIrInstruction(const std::string &instruction);
 
+    // All bool-returning methods returns whether there's no translation error
     void DoExtDefList(const KTreeNode *node);
-    void DoExtDef(const KTreeNode *node);
-    void DoExtDecList(const KTreeNode *node);
-    void DoDefList(const KTreeNode *node);
-    void DoDef(const KTreeNode *node);
-    void DoDecList(const KTreeNode *node);
-    void DoDec(const KTreeNode *node);
-    void DoVarDec(const KTreeNode *node);
-    void DoFunDec(const KTreeNode *node);
-    void DoVarList(const KTreeNode *node);
-    void DoParamDec(const KTreeNode *node);
-    void DoCompSt(const KTreeNode *node);
-    void DoStmtList(const KTreeNode *node);
-    void DoStmt(const KTreeNode *node);
+    bool DoExtDef(const KTreeNode *node);
+    bool DoExtDecList(const KTreeNode *node);
+    bool DoDefList(const KTreeNode *node);
+    bool DoDef(const KTreeNode *node);
+    bool DoDecList(const KTreeNode *node);
+    bool DoDec(const KTreeNode *node);
+    bool DoVarDec(const KTreeNode *node);
+    bool DoFunDec(const KTreeNode *node);
+    bool DoVarList(const KTreeNode *node);
+    bool DoParamDec(const KTreeNode *node);
+    std::pair<bool, IrSequence> DoCompSt(const KTreeNode *node);
+    std::pair<bool, IrSequence> DoStmtList(const KTreeNode *node);
+    std::pair<bool, IrSequence> DoStmt(const KTreeNode *node);
     ExpValueSharedPtr DoExp(const KTreeNode *node,
                             const bool force_singular,
                             const bool singular_no_prefix);
