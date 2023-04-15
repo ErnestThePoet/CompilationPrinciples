@@ -139,7 +139,7 @@ void IrGenerator::AddIrInstruction(const std::string &instruction)
 {
     ir_sequence_.push_back(instruction);
 }
-
+// todo
 void IrGenerator::DoExtDefList(const KTreeNode *node)
 {
     // ExtDefList: ExtDef ExtDefList(Nullable) | <NULL>
@@ -149,7 +149,7 @@ void IrGenerator::DoExtDefList(const KTreeNode *node)
         node = node->r_child;
     }
 }
-
+// todo
 // [INSERTS-IR]
 // Returns whether there's no translation error
 bool IrGenerator::DoExtDef(const KTreeNode *node)
@@ -170,7 +170,7 @@ bool IrGenerator::DoExtDef(const KTreeNode *node)
         DoCompSt(node->l_child->r_sibling->r_sibling);
     }
 }
-
+// todo
 IrSequenceGenerationResult IrGenerator::DoExtDecList(const KTreeNode *node)
 {
     // ExtDecList: VarDec | VarDec COMMA ExtDecList
@@ -180,7 +180,7 @@ IrSequenceGenerationResult IrGenerator::DoExtDecList(const KTreeNode *node)
         node = node->r_child;
     }
 }
-
+// todo
 IrSequenceGenerationResult IrGenerator::DoDefList(const KTreeNode *node)
 {
     // DefList: Def DefList(Nullable) | <NULL>
@@ -190,13 +190,13 @@ IrSequenceGenerationResult IrGenerator::DoDefList(const KTreeNode *node)
         node = node->r_child;
     }
 }
-
+// todo
 IrSequenceGenerationResult IrGenerator::DoDef(const KTreeNode *node)
 {
     // Def: Specifier DecList SEMICOLON
     DoDecList(node->l_child->r_sibling);
 }
-
+// todo
 IrSequenceGenerationResult IrGenerator::DoDecList(const KTreeNode *node)
 {
     // DecList: Dec | Dec COMMA DecList
@@ -206,11 +206,11 @@ IrSequenceGenerationResult IrGenerator::DoDecList(const KTreeNode *node)
         node = node->r_child;
     }
 }
-
+// todo
 IrSequenceGenerationResult IrGenerator::DoDec(const KTreeNode *node)
 {
     // Dec: VarDec | VarDec ASSIGN Exp
-    DoVarDec(node->l_child);
+    auto var_dec = DoVarDec(node->l_child);
 
     if (node->l_child->r_sibling == NULL)
     {
@@ -220,22 +220,19 @@ IrSequenceGenerationResult IrGenerator::DoDec(const KTreeNode *node)
     DoExp(node->l_child->r_sibling->r_sibling);
 }
 
-IrSequenceGenerationResult IrGenerator::DoVarDec(const KTreeNode *node)
+std::string IrGenerator::DoVarDec(const KTreeNode *node)
 {
     // VarDec: ID
     if (node->l_child->value->is_token &&
         node->l_child->value->ast_node_value.token->type == TOKEN_ID)
     {
-        return;
+        return node->l_child->value->ast_node_value.token->value;
     }
 
     // VarDec: VarDec L_SQUARE LITERAL_INT R_SQUARE
-
-    // Note that int a[2][3] should be interpreted as array<array<int,3>,2>,
-    // But ArraySymbol views it as array<array<int,2>,3>
-    DoVarDec(node->l_child);
+    return DoVarDec(node->l_child);
 }
-
+// todo
 IrSequenceGenerationResult IrGenerator::DoFunDec(const KTreeNode *node)
 {
     std::string function_name = node->l_child->value->ast_node_value.token->value;
@@ -251,7 +248,7 @@ IrSequenceGenerationResult IrGenerator::DoFunDec(const KTreeNode *node)
         DoVarList(node->l_child->r_sibling->r_sibling);
     }
 }
-
+// todo
 IrSequenceGenerationResult IrGenerator::DoVarList(const KTreeNode *node)
 {
     // VarList: ParamDec COMMA VarList | ParamDec
@@ -261,7 +258,7 @@ IrSequenceGenerationResult IrGenerator::DoVarList(const KTreeNode *node)
         node = node->r_child;
     }
 }
-
+// todo
 IrSequenceGenerationResult IrGenerator::DoParamDec(const KTreeNode *node)
 {
     // ParamDec: Specifier VarDec
@@ -350,7 +347,7 @@ IrSequenceGenerationResult IrGenerator::DoStmt(const KTreeNode *node)
         if (node->l_child->value->ast_node_value.variable->type == VARIABLE_EXP)
         {
             auto expression = DoExp(node->l_child, false, false);
-            if (expression == nullptr)
+            if (!expression)
             {
                 return kErrorReturnValue;
             }
@@ -371,7 +368,7 @@ IrSequenceGenerationResult IrGenerator::DoStmt(const KTreeNode *node)
     case TOKEN_KEYWORD_RETURN:
     {
         auto expression = DoExp(node->l_child->r_sibling, true, false);
-        if (expression == nullptr)
+        if (!expression)
         {
             return kErrorReturnValue;
         }
@@ -388,7 +385,7 @@ IrSequenceGenerationResult IrGenerator::DoStmt(const KTreeNode *node)
         auto if_stmt_node = condition_exp_node->r_sibling->r_sibling;
 
         auto condition = DoExp(condition_exp_node, false, false);
-        if (condition == nullptr)
+        if (!condition)
         {
             return kErrorReturnValue;
         }
@@ -450,7 +447,7 @@ IrSequenceGenerationResult IrGenerator::DoStmt(const KTreeNode *node)
     case TOKEN_KEYWORD_WHILE:
     {
         auto condition = DoExp(node->l_child->r_sibling->r_sibling, false, false);
-        if (condition == nullptr)
+        if (!condition)
         {
             return kErrorReturnValue;
         }
@@ -640,7 +637,7 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
                 // Concatenate preparation code
                 for (auto &arg : args)
                 {
-                    if (arg == nullptr)
+                    if (!arg)
                     {
                         return nullptr;
                     }
@@ -792,14 +789,14 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
             auto expression = static_cast<ArrayElementExpValue *>(
                 DoExp(node->l_child, true, false).get());
 
-            if (expression == nullptr)
+            if (!expression)
             {
                 return nullptr;
             }
 
             auto index_exp = DoExp(node->l_child->r_sibling->r_sibling, true, false);
 
-            if (index_exp == nullptr)
+            if (!index_exp)
             {
                 return nullptr;
             }
@@ -886,7 +883,7 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
         {
             auto expression = DoExp(node->l_child, true, false);
 
-            if (expression == nullptr)
+            if (!expression)
             {
                 return nullptr;
             }
@@ -980,7 +977,7 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
 
         auto l_exp = DoExp(node->l_child, true, false);
 
-        if (l_exp == nullptr)
+        if (!l_exp)
         {
             return nullptr;
         }
@@ -992,7 +989,7 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
         }
 
         auto r_exp = DoExp(node->r_child, true, false);
-        if (r_exp == nullptr)
+        if (!r_exp)
         {
             return nullptr;
         }
@@ -1205,7 +1202,7 @@ std::vector<ExpValueSharedPtr> IrGenerator::DoArgs(const KTreeNode *node)
     {
         auto arg_exp = DoExp(node->l_child, true, false);
 
-        if (arg_exp == nullptr)
+        if (!arg_exp)
         {
             args.push_back(arg_exp);
             continue;

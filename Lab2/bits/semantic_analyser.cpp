@@ -298,7 +298,7 @@ bool SemanticAnalyser::IsStructAssignmentValid(
 // Returns whether successfully inserted
 bool SemanticAnalyser::InsertVariableSymbol(const VariableSymbolSharedPtr &symbol)
 {
-    if (symbol == nullptr)
+    if (!symbol)
     {
         return false;
     }
@@ -354,7 +354,7 @@ void SemanticAnalyser::DoExtDef(const KTreeNode *node)
     // ExtDef: Specifier ExtDecList SEMICOLON
     if (node->l_child->r_sibling->value->ast_node_value.variable->type == VARIABLE_EXT_DEC_LIST)
     {
-        if (specifier == nullptr)
+        if (!specifier)
         {
             return;
         }
@@ -373,7 +373,7 @@ void SemanticAnalyser::DoExtDef(const KTreeNode *node)
     {
         // we do not check specifier!=nullptr or we will be unable to check the whole function body
         auto fun_dec = DoFunDec(node->l_child->r_sibling);
-        if (fun_dec == nullptr)
+        if (!fun_dec)
         {
             return;
         }
@@ -393,11 +393,11 @@ void SemanticAnalyser::DoExtDef(const KTreeNode *node)
         auto return_types = DoCompSt(node->l_child->r_sibling->r_sibling);
 
         // all parallel return values must match the declared return type
-        if (specifier != nullptr)
+        if (specifier)
         {
             for (auto &return_type : return_types)
             {
-                if (return_type == nullptr)
+                if (!return_type)
                 {
                     continue;
                 }
@@ -426,14 +426,14 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDecListDefCommon(
 {
     std::vector<VariableSymbolSharedPtr> defs;
 
-    if (specifier == nullptr)
+    if (!specifier)
     {
         return defs;
     }
 
     for (auto &dec : dec_list)
     {
-        if (dec == nullptr)
+        if (!dec)
         {
             defs.push_back(nullptr);
         }
@@ -655,7 +655,7 @@ std::shared_ptr<StructSymbol> SemanticAnalyser::DoStructSpecifier(const KTreeNod
         std::unordered_set<std::string> field_names;
         for (auto &field : fields)
         {
-            if (field == nullptr)
+            if (!field)
             {
                 continue;
             }
@@ -676,7 +676,7 @@ std::shared_ptr<StructSymbol> SemanticAnalyser::DoStructSpecifier(const KTreeNod
         // Checks kErrorStructFieldInitialized
         for (auto &field : fields)
         {
-            if (field == nullptr)
+            if (!field)
             {
                 continue;
             }
@@ -762,7 +762,7 @@ VariableSymbolSharedPtr SemanticAnalyser::DoDec(const KTreeNode *node)
 {
     // Dec: VarDec | VarDec ASSIGN Exp
     auto var_dec = DoVarDec(node->l_child);
-    if (var_dec == nullptr)
+    if (!var_dec)
     {
         return nullptr;
     }
@@ -803,7 +803,7 @@ VariableSymbolSharedPtr SemanticAnalyser::DoVarDec(const KTreeNode *node)
     // Note that int a[2][3] should be interpreted as array<array<int,3>,2>,
     // But ArraySymbol views it as array<array<int,2>,3>
     auto array_element = DoVarDec(node->l_child);
-    if (array_element == nullptr)
+    if (!array_element)
     {
         return nullptr;
     }
@@ -840,7 +840,7 @@ std::shared_ptr<FunctionSymbol> SemanticAnalyser::DoFunDec(const KTreeNode *node
 
         for (auto &arg : args)
         {
-            if (arg != nullptr)
+            if (arg)
             {
                 filtered_args.push_back(arg);
             }
@@ -969,7 +969,7 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoStmt(const KTreeNode *n
         auto condition_exp = DoExp(condition_exp_node);
 
         // condition expression errors do not stop further analysis or we will lose tons of information
-        if (condition_exp.first != nullptr)
+        if (condition_exp.first)
         {
             if (!IsIntArithmeticSymbol(*condition_exp.first))
             {
@@ -1000,7 +1000,7 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoStmt(const KTreeNode *n
         auto condition_exp = DoExp(node->l_child->r_sibling->r_sibling);
 
         // condition expression errors do not stop further analysis or we will lose tons of information
-        if (condition_exp.first != nullptr)
+        if (condition_exp.first)
         {
             if (!IsIntArithmeticSymbol(*condition_exp.first))
             {
@@ -1165,7 +1165,7 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
         if (node->l_child->value->ast_node_value.token->type == TOKEN_OPERATOR_SUB)
         {
             auto expression = DoExp(node->r_child);
-            if (expression.first == nullptr)
+            if (!expression.first)
             {
                 return kNullptrFalse;
             }
@@ -1186,7 +1186,7 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
         if (node->l_child->value->ast_node_value.token->type == TOKEN_OPERATOR_LOGICAL_NOT)
         {
             auto expression = DoExp(node->r_child);
-            if (expression.first == nullptr)
+            if (!expression.first)
             {
                 return kNullptrFalse;
             }
@@ -1217,7 +1217,7 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
         case TOKEN_DELIMITER_L_SQUARE:
         {
             auto array_exp = DoExp(node->l_child);
-            if (array_exp.first == nullptr)
+            if (!array_exp.first)
             {
                 return kNullptrFalse;
             }
@@ -1232,7 +1232,7 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
             }
 
             auto index_exp = DoExp(node->l_child);
-            if (index_exp.first == nullptr)
+            if (!index_exp.first)
             {
                 return kNullptrFalse;
             }
@@ -1252,7 +1252,7 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
         case TOKEN_OPERATOR_DOT:
         {
             auto struct_exp = DoExp(node->l_child);
-            if (struct_exp.first == nullptr)
+            if (!struct_exp.first)
             {
                 return kNullptrFalse;
             }
@@ -1304,13 +1304,13 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
         // From now on, the exp can only be a binary operation
 
         auto l_exp = DoExp(node->l_child);
-        if (l_exp.first == nullptr)
+        if (!l_exp.first)
         {
             return kNullptrFalse;
         }
 
         auto r_exp = DoExp(node->r_child);
-        if (r_exp.first == nullptr)
+        if (!r_exp.first)
         {
             return kNullptrFalse;
         }
