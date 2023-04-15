@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <fstream>
 #include <memory>
 
 extern "C"
@@ -12,6 +13,7 @@ extern "C"
 }
 
 #include "../Lab2/bits/semantic_analyser.h"
+#include "./bits/ir_generator.h"
 
 KTreeNode *kRoot = NULL;
 bool kHasLexicalError = false;
@@ -40,6 +42,8 @@ SemanticAnalyser kSemanticAnalyser(
               "",
               ArithmeticSymbolType::INT))}});
 
+IrGenerator kIrGenerator;
+
 void FreeKTreeNode(KTreeNodeValue *node)
 {
     AstNodeFree(*node);
@@ -48,6 +52,11 @@ void FreeKTreeNode(KTreeNodeValue *node)
 void SemanticAnalyse(KTreeNode *root, size_t, void *)
 {
     kSemanticAnalyser.Analyse(root);
+}
+
+void GenerateIr(KTreeNode *root, size_t, void *)
+{
+    kIrGenerator.Generate(root);
 }
 
 int main(int argc, char *argv[])
@@ -61,7 +70,7 @@ int main(int argc, char *argv[])
     FILE *source_file = fopen(argv[1], "r");
     if (source_file == NULL)
     {
-        fprintf(stderr, "Failed to open input file %s\n", argv[1]);
+        std::cerr << "Failed to open input file " << argv[1] << std::endl;
         return FAILURE;
     }
 
@@ -78,11 +87,39 @@ int main(int argc, char *argv[])
 
     KTreePreOrderTraverse(kRoot, SemanticAnalyse, NULL);
 
-    // if (!kSemanticAnalyser.GetHasError())
-    // {
-    //     kSemanticAnalyser.PrintStructDefSymbolTable();
-    //     kSemanticAnalyser.PrintSymbolTable();
-    // }
+    if (kSemanticAnalyser.GetHasError())
+    {
+        KTreeFree(kRoot, FreeKTreeNode);
+        return FAILURE;
+    }
+
+    kIrGenerator = IrGenerator(kSemanticAnalyser.GetSymbolTable(),
+                               kSemanticAnalyser.GetStructDefSymbolTable());
+
+    KTreePreOrderTraverse(kRoot, GenerateIr, NULL);
+
+    if (kIrGenerator.GetHasError())
+    {
+        KTreeFree(kRoot, FreeKTreeNode);
+        return FAILURE;
+    }
+
+    std::ofstream output_file(argv[2], std::ios::out);
+    if (!output_file.is_open())
+    {
+        std::cerr << "Failed to open output file " << argv[2] << std::endl;
+        KTreeFree(kRoot, FreeKTreeNode);
+        return FAILURE;
+    }
+
+    auto ir_sequence = kIrGenerator.GetIrSequence();
+
+    for (auto &ir : ir_sequence)
+    {
+        output_file << ir << std::endl;
+    }
+
+    output_file.close();
 
     KTreeFree(kRoot, FreeKTreeNode);
 
