@@ -96,8 +96,8 @@ private:
     IrSequenceGenerationResult DoDec(const KTreeNode *node);
     std::string DoVarDec(const KTreeNode *node);
     IrSequenceGenerationResult DoFunDec(const KTreeNode *node);
-    IrSequenceGenerationResult DoVarList(const KTreeNode *node);
-    IrSequenceGenerationResult DoParamDec(const KTreeNode *node);
+    std::vector<std::string> DoVarList(const KTreeNode *node);
+    std::string DoParamDec(const KTreeNode *node);
     IrSequenceGenerationResult DoCompSt(const KTreeNode *node);
     IrSequenceGenerationResult DoStmtList(const KTreeNode *node);
     IrSequenceGenerationResult DoStmt(const KTreeNode *node);

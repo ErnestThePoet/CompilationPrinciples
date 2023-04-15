@@ -284,37 +284,55 @@ std::string IrGenerator::DoVarDec(const KTreeNode *node)
     // VarDec: VarDec L_SQUARE LITERAL_INT R_SQUARE
     return DoVarDec(node->l_child);
 }
-// todo
+
+// [INSERTS-IR-VARIABLE] (function parameters)
 IrSequenceGenerationResult IrGenerator::DoFunDec(const KTreeNode *node)
 {
+    IrSequence sequence;
     std::string function_name = node->l_child->value->ast_node_value.token->value;
 
+    sequence.push_back(instruction_generator_.GenerateFunction(function_name));
+
     // FunDec: ID L_BRACKET R_BRACKET
-    if (node->l_child->r_sibling->r_sibling->value->is_token)
-    {
-        return;
-    }
+
     // FunDec: ID L_BRACKET VarList R_BRACKET
-    else
+    if (!node->l_child->r_sibling->r_sibling->value->is_token)
     {
-        DoVarList(node->l_child->r_sibling->r_sibling);
+        auto function_symbol = static_cast<FunctionSymbol *>(
+            symbol_table_.at(function_name).get());
+
+        auto function_args = function_symbol->GetArgs();
+        auto var_list = DoVarList(node->l_child->r_sibling->r_sibling);
+
+        for (int i = 0; i < function_args.size(); i++)
+        {
+            auto param_variable_name = GetNextVariableName();
+            ir_variable_table_[function_args[i]->GetName()] = param_variable_name;
+            sequence.push_back(instruction_generator_.GenerateParam(
+                param_variable_name));
+        }
     }
+
+    return {true, sequence};
 }
-// todo
-IrSequenceGenerationResult IrGenerator::DoVarList(const KTreeNode *node)
+
+std::vector<std::string> IrGenerator::DoVarList(const KTreeNode *node)
 {
+    std::vector<std::string> vars;
     // VarList: ParamDec COMMA VarList | ParamDec
     while (node != NULL)
     {
-        DoParamDec(node->l_child);
+        vars.push_back(DoParamDec(node->l_child));
         node = node->r_child;
     }
+
+    return vars;
 }
-// todo
-IrSequenceGenerationResult IrGenerator::DoParamDec(const KTreeNode *node)
+
+std::string IrGenerator::DoParamDec(const KTreeNode *node)
 {
     // ParamDec: Specifier VarDec
-    DoVarDec(node->r_child);
+    return DoVarDec(node->r_child);
 }
 
 IrSequenceGenerationResult IrGenerator::DoCompSt(const KTreeNode *node)
