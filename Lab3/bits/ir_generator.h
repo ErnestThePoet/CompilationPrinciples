@@ -30,6 +30,8 @@ extern "C"
 #include "exp_values/array_element_exp_value.h"
 
 using IrSequence = std::vector<std::string>;
+// <no error, ir sequence>
+using IrSequenceGenerationResult = std::pair<bool, IrSequence>;
 
 class IrGenerator
 {
@@ -83,21 +85,20 @@ private:
     void ConcatenateIrSequence(IrSequence &seq1, const IrSequence &seq2) const;
     void AddIrInstruction(const std::string &instruction);
 
-    // All bool-returning methods returns whether there's no translation error
     void DoExtDefList(const KTreeNode *node);
     bool DoExtDef(const KTreeNode *node);
-    bool DoExtDecList(const KTreeNode *node);
-    bool DoDefList(const KTreeNode *node);
-    bool DoDef(const KTreeNode *node);
-    bool DoDecList(const KTreeNode *node);
-    bool DoDec(const KTreeNode *node);
-    bool DoVarDec(const KTreeNode *node);
-    bool DoFunDec(const KTreeNode *node);
-    bool DoVarList(const KTreeNode *node);
-    bool DoParamDec(const KTreeNode *node);
-    std::pair<bool, IrSequence> DoCompSt(const KTreeNode *node);
-    std::pair<bool, IrSequence> DoStmtList(const KTreeNode *node);
-    std::pair<bool, IrSequence> DoStmt(const KTreeNode *node);
+    IrSequenceGenerationResult DoExtDecList(const KTreeNode *node);
+    IrSequenceGenerationResult DoDefList(const KTreeNode *node);
+    IrSequenceGenerationResult DoDef(const KTreeNode *node);
+    IrSequenceGenerationResult DoDecList(const KTreeNode *node);
+    IrSequenceGenerationResult DoDec(const KTreeNode *node);
+    IrSequenceGenerationResult DoVarDec(const KTreeNode *node);
+    IrSequenceGenerationResult DoFunDec(const KTreeNode *node);
+    IrSequenceGenerationResult DoVarList(const KTreeNode *node);
+    IrSequenceGenerationResult DoParamDec(const KTreeNode *node);
+    IrSequenceGenerationResult DoCompSt(const KTreeNode *node);
+    IrSequenceGenerationResult DoStmtList(const KTreeNode *node);
+    IrSequenceGenerationResult DoStmt(const KTreeNode *node);
     ExpValueSharedPtr DoExp(const KTreeNode *node,
                             const bool force_singular,
                             const bool singular_no_prefix);

@@ -151,6 +151,7 @@ void IrGenerator::DoExtDefList(const KTreeNode *node)
 }
 
 // [INSERTS-IR]
+// Returns whether there's no translation error
 bool IrGenerator::DoExtDef(const KTreeNode *node)
 {
     // ExtDef: Specifier SEMICOLON
@@ -170,7 +171,7 @@ bool IrGenerator::DoExtDef(const KTreeNode *node)
     }
 }
 
-bool IrGenerator::DoExtDecList(const KTreeNode *node)
+IrSequenceGenerationResult IrGenerator::DoExtDecList(const KTreeNode *node)
 {
     // ExtDecList: VarDec | VarDec COMMA ExtDecList
     while (node != NULL)
@@ -180,7 +181,7 @@ bool IrGenerator::DoExtDecList(const KTreeNode *node)
     }
 }
 
-bool IrGenerator::DoDefList(const KTreeNode *node)
+IrSequenceGenerationResult IrGenerator::DoDefList(const KTreeNode *node)
 {
     // DefList: Def DefList(Nullable) | <NULL>
     while (node != NULL)
@@ -190,13 +191,13 @@ bool IrGenerator::DoDefList(const KTreeNode *node)
     }
 }
 
-bool IrGenerator::DoDef(const KTreeNode *node)
+IrSequenceGenerationResult IrGenerator::DoDef(const KTreeNode *node)
 {
     // Def: Specifier DecList SEMICOLON
     DoDecList(node->l_child->r_sibling);
 }
 
-bool IrGenerator::DoDecList(const KTreeNode *node)
+IrSequenceGenerationResult IrGenerator::DoDecList(const KTreeNode *node)
 {
     // DecList: Dec | Dec COMMA DecList
     while (node != NULL)
@@ -206,7 +207,7 @@ bool IrGenerator::DoDecList(const KTreeNode *node)
     }
 }
 
-bool IrGenerator::DoDec(const KTreeNode *node)
+IrSequenceGenerationResult IrGenerator::DoDec(const KTreeNode *node)
 {
     // Dec: VarDec | VarDec ASSIGN Exp
     DoVarDec(node->l_child);
@@ -219,7 +220,7 @@ bool IrGenerator::DoDec(const KTreeNode *node)
     DoExp(node->l_child->r_sibling->r_sibling);
 }
 
-bool IrGenerator::DoVarDec(const KTreeNode *node)
+IrSequenceGenerationResult IrGenerator::DoVarDec(const KTreeNode *node)
 {
     // VarDec: ID
     if (node->l_child->value->is_token &&
@@ -235,7 +236,7 @@ bool IrGenerator::DoVarDec(const KTreeNode *node)
     DoVarDec(node->l_child);
 }
 
-bool IrGenerator::DoFunDec(const KTreeNode *node)
+IrSequenceGenerationResult IrGenerator::DoFunDec(const KTreeNode *node)
 {
     std::string function_name = node->l_child->value->ast_node_value.token->value;
 
@@ -251,7 +252,7 @@ bool IrGenerator::DoFunDec(const KTreeNode *node)
     }
 }
 
-bool IrGenerator::DoVarList(const KTreeNode *node)
+IrSequenceGenerationResult IrGenerator::DoVarList(const KTreeNode *node)
 {
     // VarList: ParamDec COMMA VarList | ParamDec
     while (node != NULL)
@@ -261,15 +262,18 @@ bool IrGenerator::DoVarList(const KTreeNode *node)
     }
 }
 
-bool IrGenerator::DoParamDec(const KTreeNode *node)
+IrSequenceGenerationResult IrGenerator::DoParamDec(const KTreeNode *node)
 {
     // ParamDec: Specifier VarDec
     DoVarDec(node->r_child);
 }
 
-std::pair<bool, IrSequence> IrGenerator::DoCompSt(const KTreeNode *node)
+IrSequenceGenerationResult IrGenerator::DoCompSt(const KTreeNode *node)
 {
+    IrSequenceGenerationResult kErrorReturnValue = {false, IrSequence()};
     // CompSt: L_BRACE DefList(Nullable) StmtList(Nullable) R_BRACE
+
+    IrSequence sequence;
 
     // At least one of DefList and StmtList is not NULL
     if (!node->l_child->r_sibling->value->is_token)
@@ -277,30 +281,47 @@ std::pair<bool, IrSequence> IrGenerator::DoCompSt(const KTreeNode *node)
         // DefList is not NULL
         if (node->l_child->r_sibling->value->ast_node_value.variable->type == VARIABLE_DEF_LIST)
         {
-            DoDefList(node->l_child->r_sibling);
+            auto def_list = DoDefList(node->l_child->r_sibling);
+            if (!def_list.first)
+            {
+                return kErrorReturnValue;
+            }
+
+            ConcatenateIrSequence(sequence, def_list.second);
 
             // StmtList is not NULL either
             if (!node->l_child->r_sibling->r_sibling->value->is_token)
             {
-                DoStmtList(node->l_child->r_sibling->r_sibling);
+                auto statement_list = DoStmtList(node->l_child->r_sibling->r_sibling);
+                if (!statement_list.first)
+                {
+                    return kErrorReturnValue;
+                }
+
+                ConcatenateIrSequence(sequence, statement_list.second);
             }
             // StmtList is NULL
-            else
-            {
-                return;
-            }
         }
         // DefList is NULL and StmtList is not NULL
         else
         {
-            DoStmtList(node->l_child->r_sibling);
+            auto statement_list = DoStmtList(node->l_child->r_sibling);
+            if (!statement_list.first)
+            {
+                return kErrorReturnValue;
+            }
+
+            ConcatenateIrSequence(sequence, statement_list.second);
         }
     }
 
     // Both DefList and StmtList are NULL
+
+    // Common return
+    return {true, sequence};
 }
 
-std::pair<bool, IrSequence> IrGenerator::DoStmtList(const KTreeNode *node)
+IrSequenceGenerationResult IrGenerator::DoStmtList(const KTreeNode *node)
 {
     IrSequence sequence;
     // StmtList: Stmt StmtList(Nullable) | <NULL>
@@ -319,10 +340,9 @@ std::pair<bool, IrSequence> IrGenerator::DoStmtList(const KTreeNode *node)
     }
 }
 
-// Returns <no error, ir sequence>
-std::pair<bool, IrSequence> IrGenerator::DoStmt(const KTreeNode *node)
+IrSequenceGenerationResult IrGenerator::DoStmt(const KTreeNode *node)
 {
-    std::pair<bool, IrSequence> kErrorReturnValue = {false, IrSequence()};
+    IrSequenceGenerationResult kErrorReturnValue = {false, IrSequence()};
 
     if (!node->l_child->value->is_token)
     {
