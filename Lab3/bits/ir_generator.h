@@ -85,11 +85,11 @@ private:
     std::string GetBinaryOperator(const int type) const;
     bool ShouldUseAddress(const VariableSymbolSharedPtr &variable) const;
     void ConcatenateIrSequence(IrSequence &seq1, const IrSequence &seq2) const;
-    void AddIrInstruction(const std::string &instruction);
+    void AppendIrSequence(const IrSequence &instruction);
 
     void DoExtDefList(const KTreeNode *node);
     bool DoExtDef(const KTreeNode *node);
-    std::vector<std::string> DoExtDecList(const KTreeNode *node);
+    IrSequenceGenerationResult DoExtDecList(const KTreeNode *node);
     IrSequenceGenerationResult DoDefList(const KTreeNode *node);
     IrSequenceGenerationResult DoDef(const KTreeNode *node);
     IrSequenceGenerationResult DoDecList(const KTreeNode *node);

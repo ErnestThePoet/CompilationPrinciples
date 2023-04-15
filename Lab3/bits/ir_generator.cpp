@@ -135,21 +135,24 @@ void IrGenerator::ConcatenateIrSequence(IrSequence &seq1, const IrSequence &seq2
     seq1.insert(seq1.cend(), seq2.cbegin(), seq2.cend());
 }
 
-void IrGenerator::AddIrInstruction(const std::string &instruction)
+void IrGenerator::AppendIrSequence(const IrSequence &ir_sequence)
 {
-    ir_sequence_.push_back(instruction);
+    ConcatenateIrSequence(ir_sequence_, ir_sequence);
 }
-// todo
+
 void IrGenerator::DoExtDefList(const KTreeNode *node)
 {
     // ExtDefList: ExtDef ExtDefList(Nullable) | <NULL>
     while (node != NULL)
     {
-        DoExtDef(node->l_child);
+        if (!DoExtDef(node->l_child))
+        {
+            return;
+        }
         node = node->r_child;
     }
 }
-// todo
+
 // [INSERTS-IR]
 // Returns whether there's no translation error
 bool IrGenerator::DoExtDef(const KTreeNode *node)
@@ -160,28 +163,63 @@ bool IrGenerator::DoExtDef(const KTreeNode *node)
     // ExtDef: Specifier ExtDecList SEMICOLON
     if (node->l_child->r_sibling->value->ast_node_value.variable->type == VARIABLE_EXT_DEC_LIST)
     {
-        DoExtDecList(node->l_child->r_sibling);
+        auto ext_decs = DoExtDecList(node->l_child->r_sibling);
+        if (!ext_decs.first)
+        {
+            return false;
+        }
+
+        AppendIrSequence(ext_decs.second);
     }
     // ExtDef: Specifier FunDec CompSt
     else
     {
-        DoFunDec(node->l_child->r_sibling);
+        auto fun_dec = DoFunDec(node->l_child->r_sibling);
+        if (!fun_dec.first)
+        {
+            return false;
+        }
 
-        DoCompSt(node->l_child->r_sibling->r_sibling);
+        auto comp_statement = DoCompSt(node->l_child->r_sibling->r_sibling);
+        if (!comp_statement.first)
+        {
+            return false;
+        }
+
+        AppendIrSequence(fun_dec.second);
+        AppendIrSequence(comp_statement.second);
     }
+
+    return true;
 }
 
-std::vector<std::string> IrGenerator::DoExtDecList(const KTreeNode *node)
+// [INSERTS-IR-VARIABLE]
+IrSequenceGenerationResult IrGenerator::DoExtDecList(const KTreeNode *node)
 {
-    std::vector<std::string> ext_decs;
+    IrSequence sequence;
     // ExtDecList: VarDec | VarDec COMMA ExtDecList
     while (node != NULL)
     {
-        ext_decs.push_back(DoVarDec(node->l_child));
+        auto symbol = symbol_table_.at(DoVarDec(node->l_child));
+        auto variable_name = GetNextVariableName();
+        ir_variable_table_[symbol->GetName()] = variable_name;
+
+        switch (symbol->GetVariableSymbolType())
+        {
+        case VariableSymbolType::ARRAY:
+        case VariableSymbolType::STRUCT:
+        {
+            sequence.push_back(instruction_generator_.GenerateDec(
+                variable_name,
+                GetVariableSize(*symbol)));
+            break;
+        }
+        }
+
         node = node->r_child;
     }
 
-    return ext_decs;
+    return {true, sequence};
 }
 
 IrSequenceGenerationResult IrGenerator::DoDefList(const KTreeNode *node)
@@ -272,6 +310,7 @@ IrSequenceGenerationResult IrGenerator::DoDec(const KTreeNode *node)
     return {true, sequence};
 }
 
+// Returns the variable symbol name
 std::string IrGenerator::DoVarDec(const KTreeNode *node)
 {
     // VarDec: ID
