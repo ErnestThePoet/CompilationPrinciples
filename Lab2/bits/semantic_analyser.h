@@ -40,7 +40,10 @@ private:
     std::random_device random_device_;
     std::mt19937 mt19937_;
     std::uniform_int_distribution<> distribution_;
-
+    
+    // Along with the detailed explanations for duplicate names in textbook,
+    // we hold that struct definitions and other symbols are essentially
+    // different, and a same name in two tables is not seen as a conflict.
     static constexpr int kErrorUndefinedVariable = 1;         // Impled
     static constexpr int kErrorUndefinedFunction = 2;         // Impled
     static constexpr int kErrorDuplicateVariableName = 3;     // Impled
