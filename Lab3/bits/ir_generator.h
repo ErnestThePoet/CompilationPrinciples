@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <tuple>
 #include <utility>
 
 extern "C"
@@ -27,7 +28,6 @@ extern "C"
 #include "instruction_generator.h"
 #include "exp_values/exp_value.h"
 #include "exp_values/array_element_exp_value.h"
-#include "exp_values/struct_field_exp_value.h"
 
 using IrSequence = std::vector<std::string>;
 
@@ -76,7 +76,10 @@ private:
     std::string GetNextVariableName();
     std::string GetNextLabelName();
     size_t GetVariableSize(const VariableSymbol &variable) const;
-    std::pair<std::vector<size_t>, size_t> GetArrayInfo(const ArraySymbol &variable) const;
+    std::tuple<std::vector<size_t>, VariableSymbolSharedPtr, size_t> GetArrayInfo(
+        const ArraySymbol &variable) const;
+    std::string GetBinaryOperator(const int type) const;
+    bool ShouldUseAddress(const VariableSymbolSharedPtr &variable) const;
     void ConcatenateIrSequence(IrSequence &seq1, const IrSequence &seq2) const;
     void AddIrInstruction(const std::string &instruction);
 
@@ -95,6 +98,7 @@ private:
     void DoStmtList(const KTreeNode *node);
     void DoStmt(const KTreeNode *node);
     ExpValueSharedPtr DoExp(const KTreeNode *node,
-                            const bool force_singular = false);
+                            const bool force_singular,
+                            const bool singular_no_prefix);
     std::vector<ExpValueSharedPtr> DoArgs(const KTreeNode *node);
 };

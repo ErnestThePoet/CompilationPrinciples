@@ -68,21 +68,66 @@ size_t IrGenerator::GetVariableSize(const VariableSymbol &variable) const
     }
 }
 
-// Returns <array dim sizes, element size>
-std::pair<std::vector<size_t>, size_t> IrGenerator::GetArrayInfo(const ArraySymbol &array_variable) const
+std::string IrGenerator::GetBinaryOperator(const int type) const
 {
-    const VariableSymbol *current_dim_type = static_cast<const VariableSymbol *>(&array_variable);
+    switch (type)
+    {
+    case TOKEN_OPERATOR_REL_EQ:
+        return InstructionGenerator::kBinaryOperatorEq;
+    case TOKEN_OPERATOR_REL_GE:
+        return InstructionGenerator::kBinaryOperatorGe;
+    case TOKEN_OPERATOR_REL_GT:
+        return InstructionGenerator::kBinaryOperatorGt;
+    case TOKEN_OPERATOR_REL_LE:
+        return InstructionGenerator::kBinaryOperatorLe;
+    case TOKEN_OPERATOR_REL_LT:
+        return InstructionGenerator::kBinaryOperatorLt;
+    case TOKEN_OPERATOR_REL_NE:
+        return InstructionGenerator::kBinaryOperatorNe;
+    case TOKEN_OPERATOR_ADD:
+        return InstructionGenerator::kBinaryOperatorAdd;
+    case TOKEN_OPERATOR_SUB:
+        return InstructionGenerator::kBinaryOperatorSub;
+    case TOKEN_OPERATOR_MUL:
+        return InstructionGenerator::kBinaryOperatorMul;
+    case TOKEN_OPERATOR_DIV:
+        return InstructionGenerator::kBinaryOperatorDiv;
+    default:
+        return "";
+    }
+}
+
+bool IrGenerator::ShouldUseAddress(const VariableSymbolSharedPtr &variable) const
+{
+    switch (variable->GetVariableSymbolType())
+    {
+    case VariableSymbolType::ARRAY:
+    case VariableSymbolType::STRUCT:
+        return true;
+    default:
+        return false;
+    }
+}
+
+// Returns <array dim sizes, element type, element size>
+auto IrGenerator::GetArrayInfo(const ArraySymbol &array_variable) const
+    -> std::tuple<std::vector<size_t>, VariableSymbolSharedPtr, size_t>
+{
+    auto current_array = &array_variable;
 
     std::vector<size_t> dim_sizes;
 
-    while (current_dim_type->GetVariableSymbolType() == VariableSymbolType::ARRAY)
+    while (current_array->GetElemType()->GetVariableSymbolType() == VariableSymbolType::ARRAY)
     {
-        auto current_array = static_cast<const ArraySymbol *>(current_dim_type);
         dim_sizes.push_back(current_array->GetSize());
-        current_dim_type = current_array->GetElemType().get();
+        current_array = static_cast<const ArraySymbol *>(current_array->GetElemType().get());
     }
 
-    return {dim_sizes, GetVariableSize(*current_dim_type)};
+    dim_sizes.push_back(current_array->GetSize());
+
+    return {dim_sizes,
+            current_array->GetElemType(),
+            GetVariableSize(*(current_array->GetElemType()))};
 }
 
 void IrGenerator::ConcatenateIrSequence(IrSequence &seq1, const IrSequence &seq2) const
@@ -324,13 +369,19 @@ void IrGenerator::DoStmt(const KTreeNode *node)
 
 // Returns the expression's final value and the leading preparation IR sequence.
 // If force_singular is true, then GetFinalValue() of returned ExpValue
-// is guarenteed to be either a variable(may be prefixed with & or *) or an imm.
-// Otherwise, GetFinalValue() may contain a binary operation in the form of x op y.
-// When translating an array indexing, calls before the final dim will have
-// GetFinalValue() in return value being the starting address to next dim.
+// is guarenteed to be either a variable or an imm. Further, when singular_no_prefix is true,
+// then it's guaranteed that the singular is not prefixed with & or *. Note that
+// a call for a l-value expression must not have singular_no_prefix=true.
+// Otherwise, GetFinalValue() may contain a binary operation in the form of x op y
+// or a function call.
+// When node points to an array indexing which is not at the final dim(i.e., a or a[1] for
+// array a[5][5]), GetFinalValue() in return value will be the base address of next dim
+// (i.e., a or a+1*5*4). This is used for translating array element and array argument.
+// When node points to a struct object, GetFinalValue() in return value will be its address.
 // If translation error happens, nullptr is returned.
 ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
-                                     const bool force_singular = false)
+                                     const bool force_singular,
+                                     const bool singular_no_prefix)
 {
     if (node->l_child->value->is_token)
     {
@@ -344,6 +395,7 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
             case TOKEN_ID:
             {
                 auto symbol = symbol_table_.at(token_value);
+                auto ir_variable_name = ir_variable_table_.at(token_value);
 
                 switch (symbol->GetVariableSymbolType())
                 {
@@ -354,30 +406,59 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
                 {
                     auto array_info = GetArrayInfo(*static_cast<ArraySymbol *>(symbol.get()));
 
-                    return std::make_shared<ArrayElementExpValue>(
-                        IrSequence(),
-                        instruction_generator_.GenerateAddress(
-                            ir_variable_table_.at(token_value)),
-                        symbol,
-                        0,
-                        array_info.first,
-                        array_info.second);
+                    if (force_singular && singular_no_prefix)
+                    {
+                        auto address_name = GetNextVariableName();
+                        return std::make_shared<ArrayElementExpValue>(
+                            IrSequence({instruction_generator_.GenerateAssign(
+                                address_name,
+                                instruction_generator_.GenerateAddress(ir_variable_name))}),
+                            address_name,
+                            symbol,
+                            0,
+                            std::get<0>(array_info),
+                            std::get<1>(array_info),
+                            std::get<2>(array_info));
+                    }
+                    else
+                    {
+                        return std::make_shared<ArrayElementExpValue>(
+                            IrSequence(),
+                            instruction_generator_.GenerateAddress(ir_variable_name),
+                            symbol,
+                            0,
+                            std::get<0>(array_info),
+                            std::get<1>(array_info),
+                            std::get<2>(array_info));
+                    }
                 }
                 // Struct can be arg, after selecting field can be lval/rval.
                 // In all cases we start with its address.
                 case VariableSymbolType::STRUCT:
                 {
-                    return std::make_shared<ExpValue>(
-                        IrSequence(),
-                        instruction_generator_.GenerateAddress(
-                            ir_variable_table_.at(token_value)),
-                        symbol);
+                    if (force_singular && singular_no_prefix)
+                    {
+                        auto address_name = GetNextVariableName();
+                        return std::make_shared<ExpValue>(
+                            IrSequence({instruction_generator_.GenerateAssign(
+                                address_name,
+                                instruction_generator_.GenerateAddress(ir_variable_name))}),
+                            address_name,
+                            symbol);
+                    }
+                    else
+                    {
+                        return std::make_shared<ExpValue>(
+                            IrSequence(),
+                            instruction_generator_.GenerateAddress(ir_variable_name),
+                            symbol);
+                    }
                 }
                 default:
                 {
                     return std::make_shared<ExpValue>(
                         IrSequence(),
-                        ir_variable_table_.at(token_value),
+                        ir_variable_name,
                         symbol);
                 }
                 }
@@ -504,7 +585,7 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
         // Exp: SUB Exp ///////////////////////////////////////////////////
         if (node->l_child->value->ast_node_value.token->type == TOKEN_OPERATOR_SUB)
         {
-            auto expression = DoExp(node->r_child, true);
+            auto expression = DoExp(node->r_child, true, false);
             IrSequence preparation_sequence = expression->GetPreparationSequence();
 
             if (force_singular)
@@ -539,7 +620,7 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
         // Exp: NOT Exp ///////////////////////////////////////////////////
         if (node->l_child->value->ast_node_value.token->type == TOKEN_OPERATOR_LOGICAL_NOT)
         {
-            auto expression = DoExp(node->r_child, true);
+            auto expression = DoExp(node->r_child, true, true);
             auto preparation_sequence = expression->GetPreparationSequence();
 
             auto result_variable_name = GetNextVariableName();
@@ -567,12 +648,15 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
             return std::make_shared<ExpValue>(
                 preparation_sequence,
                 result_variable_name,
-                expression->GetSourceType());
+                std::make_shared<ArithmeticSymbol>(
+                    -1,
+                    "",
+                    ArithmeticSymbolType::INT));
         }
         ///////////////////////////////////////////////////////////////////
 
         // Exp: L_BRACKET Exp R_BRACKET ///////////////////////////////////
-        return DoExp(node->l_child->r_sibling, force_singular);
+        return DoExp(node->l_child->r_sibling, force_singular, singular_no_prefix);
         ///////////////////////////////////////////////////////////////////
     }
     else
@@ -585,14 +669,14 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
         case TOKEN_DELIMITER_L_SQUARE:
         {
             auto expression = static_cast<ArrayElementExpValue *>(
-                DoExp(node->l_child, true).get());
+                DoExp(node->l_child, true, false).get());
 
             if (expression == nullptr)
             {
                 return nullptr;
             }
 
-            auto index_exp = DoExp(node->l_child->r_sibling->r_sibling, true);
+            auto index_exp = DoExp(node->l_child->r_sibling->r_sibling, true, false);
 
             if (index_exp == nullptr)
             {
@@ -632,16 +716,41 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
             // currently at last dim
             if (expression->GetCurrentDim() + 1 == array_dim_sizes.size())
             {
-                return std::make_shared<ArrayElementExpValue>(
-                    preparation_sequence,
-                    instruction_generator_.GenerateDereference(next_address_base_name),
-                    expression->GetSourceType(),
-                    expression->GetCurrentDim() + 1,
-                    expression->GetArrayDimSizes(),
-                    expression->GetArrayElementSize());
+                // if element is struct, still generate an address
+                if (expression->GetArrayElementType()->GetVariableSymbolType() ==
+                    VariableSymbolType::STRUCT)
+                {
+                    return std::make_shared<ExpValue>(
+                        preparation_sequence,
+                        next_address_base_name,
+                        expression->GetArrayElementType());
+                }
+                else
+                {
+                    if (force_singular && singular_no_prefix)
+                    {
+                        auto variable_name = GetNextVariableName();
+                        preparation_sequence.push_back(instruction_generator_.GenerateAssign(
+                            variable_name,
+                            instruction_generator_.GenerateDereference(next_address_base_name)));
+
+                        return std::make_shared<ExpValue>(
+                            preparation_sequence,
+                            variable_name,
+                            expression->GetArrayElementType());
+                    }
+                    else
+                    {
+                        return std::make_shared<ExpValue>(
+                            preparation_sequence,
+                            instruction_generator_.GenerateDereference(next_address_base_name),
+                            expression->GetArrayElementType());
+                    }
+                }
             }
             // currently not at last dim
-            else{
+            else
+            {
                 return std::make_shared<ArrayElementExpValue>(
                     preparation_sequence,
                     next_address_base_name,
@@ -654,33 +763,236 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
 
         case TOKEN_OPERATOR_DOT:
         {
-            DoExp(node->l_child);
+            auto expression = DoExp(node->l_child, true, false);
+
+            if (expression == nullptr)
+            {
+                return nullptr;
+            }
 
             std::string field_name = node->r_child->value->ast_node_value.token->value;
 
-            return;
+            auto struct_def = struct_def_symbol_table_.at(
+                static_cast<StructSymbol *>(expression->GetSourceType().get())->GetStructName());
+
+            auto fields = struct_def->GetFields();
+
+            size_t field_offset = 0;
+
+            for (int i = 0; i < fields.size(); i++)
+            {
+                if (fields[i]->GetName() == field_name)
+                {
+                    auto preparation_sequence = expression->GetPreparationSequence();
+                    auto address_name = expression->GetFinalValue();
+                    // save an addition when field_offset=0
+                    if (field_offset > 0)
+                    {
+                        address_name = GetNextVariableName();
+                        preparation_sequence.push_back(
+                            instruction_generator_.GenerateAssign(
+                                address_name,
+                                instruction_generator_.GenerateBinaryOperation(
+                                    InstructionGenerator::kBinaryOperatorAdd,
+                                    expression->GetFinalValue(),
+                                    instruction_generator_.GenerateImm(field_offset))));
+                    }
+
+                    switch (fields[i]->GetVariableSymbolType())
+                    {
+                    case VariableSymbolType::ARRAY:
+                    {
+                        auto array_info = GetArrayInfo(
+                            *static_cast<ArraySymbol *>(fields[i].get()));
+
+                        return std::make_shared<ArrayElementExpValue>(
+                            preparation_sequence,
+                            address_name,
+                            fields[i],
+                            0,
+                            std::get<0>(array_info),
+                            std::get<1>(array_info),
+                            std::get<2>(array_info));
+                    }
+                    case VariableSymbolType::STRUCT:
+                    {
+                        return std::make_shared<ExpValue>(
+                            preparation_sequence,
+                            address_name,
+                            fields[i]);
+                    }
+                    default:
+                    {
+                        if (force_singular && singular_no_prefix)
+                        {
+                            auto variable_name = GetNextVariableName();
+                            preparation_sequence.push_back(instruction_generator_.GenerateAssign(
+                                variable_name,
+                                instruction_generator_.GenerateDereference(address_name)));
+
+                            return std::make_shared<ExpValue>(
+                                preparation_sequence,
+                                variable_name,
+                                fields[i]);
+                        }
+                        else
+                        {
+                            return std::make_shared<ExpValue>(
+                                preparation_sequence,
+                                instruction_generator_.GenerateDereference(address_name),
+                                fields[i]);
+                        }
+                    }
+                    }
+                }
+                else
+                {
+                    field_offset += GetVariableSize(*fields[i]);
+                }
+            }
+
+            return nullptr;
         }
         }
 
         // From now on, the exp can only be a binary operation
 
-        DoExp(node->l_child);
+        auto l_exp = DoExp(node->l_child, true, false);
 
-        DoExp(node->r_child);
+        if (l_exp == nullptr)
+        {
+            return nullptr;
+        }
 
-        switch (second_child->value->ast_node_value.token->type)
+        if (l_exp->GetSourceType()->GetVariableSymbolType() != VariableSymbolType::ARITHMETIC)
+        {
+            PrintError("Assignment can only be performed between arithmetic variables");
+            return nullptr;
+        }
+
+        auto r_exp = DoExp(node->r_child, true, false);
+        if (r_exp == nullptr)
+        {
+            return nullptr;
+        }
+
+        IrSequence preparation_sequence;
+        ConcatenateIrSequence(preparation_sequence, l_exp->GetPreparationSequence());
+        ConcatenateIrSequence(preparation_sequence, r_exp->GetPreparationSequence());
+
+        auto operator_type = second_child->value->ast_node_value.token->type;
+
+        switch (operator_type)
         {
         case TOKEN_OPERATOR_ASSIGN:
         {
-            return;
+            preparation_sequence.push_back(instruction_generator_.GenerateAssign(
+                l_exp->GetFinalValue(),
+                r_exp->GetFinalValue()));
+
+            // Note that r_exp.FinalValue() may be prefixed
+            if (force_singular && singular_no_prefix)
+            {
+                auto variable_name = GetNextVariableName();
+
+                preparation_sequence.push_back(instruction_generator_.GenerateAssign(
+                    variable_name,
+                    r_exp->GetFinalValue()));
+
+                return std::make_shared<ExpValue>(
+                    preparation_sequence,
+                    variable_name,
+                    r_exp->GetSourceType());
+            }
+            else
+            {
+                return std::make_shared<ExpValue>(
+                    preparation_sequence,
+                    r_exp->GetFinalValue(),
+                    r_exp->GetSourceType());
+            }
         }
 
         case TOKEN_OPERATOR_LOGICAL_AND:
+        {
+            auto result_variable_name = GetNextVariableName();
+            auto true_label = GetNextLabelName();
+            auto next_test_label = GetNextLabelName();
+            auto false_label = GetNextLabelName();
+            auto exit_label = GetNextLabelName();
+
+            preparation_sequence.push_back(instruction_generator_.GenerateIf(
+                l_exp->GetFinalValue(),
+                next_test_label));
+
+            preparation_sequence.push_back(instruction_generator_.GenerateLabel(false_label));
+
+            preparation_sequence.push_back(instruction_generator_.GenerateAssign(
+                result_variable_name,
+                instruction_generator_.GenerateImm(0)));
+
+            preparation_sequence.push_back(instruction_generator_.GenerateGoto(exit_label));
+
+            preparation_sequence.push_back(instruction_generator_.GenerateLabel(next_test_label));
+
+            preparation_sequence.push_back(instruction_generator_.GenerateIf(
+                r_exp->GetFinalValue(),
+                true_label));
+
+            preparation_sequence.push_back(instruction_generator_.GenerateGoto(false_label));
+
+            preparation_sequence.push_back(instruction_generator_.GenerateLabel(true_label));
+
+            preparation_sequence.push_back(instruction_generator_.GenerateAssign(
+                result_variable_name,
+                instruction_generator_.GenerateImm(1)));
+
+            preparation_sequence.push_back(instruction_generator_.GenerateLabel(exit_label));
+
+            return std::make_shared<ExpValue>(
+                preparation_sequence,
+                result_variable_name,
+                std::make_shared<ArithmeticSymbol>(
+                    -1,
+                    "",
+                    ArithmeticSymbolType::INT));
+        }
         case TOKEN_OPERATOR_LOGICAL_OR:
         {
-            return;
-        }
+            auto result_variable_name = GetNextVariableName();
+            auto true_label = GetNextLabelName();
+            auto exit_label = GetNextLabelName();
 
+            preparation_sequence.push_back(instruction_generator_.GenerateIf(
+                l_exp->GetFinalValue(),
+                true_label));
+
+            preparation_sequence.push_back(instruction_generator_.GenerateIf(
+                r_exp->GetFinalValue(),
+                true_label));
+
+            preparation_sequence.push_back(instruction_generator_.GenerateAssign(
+                result_variable_name,
+                instruction_generator_.GenerateImm(0)));
+
+            preparation_sequence.push_back(instruction_generator_.GenerateGoto(exit_label));
+
+            preparation_sequence.push_back(instruction_generator_.GenerateLabel(true_label));
+
+            preparation_sequence.push_back(instruction_generator_.GenerateAssign(
+                result_variable_name,
+                instruction_generator_.GenerateImm(1)));
+
+            preparation_sequence.push_back(instruction_generator_.GenerateLabel(exit_label));
+
+            return std::make_shared<ExpValue>(
+                preparation_sequence,
+                result_variable_name,
+                std::make_shared<ArithmeticSymbol>(
+                    -1,
+                    "",
+                    ArithmeticSymbolType::INT));
+        }
         case TOKEN_OPERATOR_REL_EQ:
         case TOKEN_OPERATOR_REL_GE:
         case TOKEN_OPERATOR_REL_GT:
@@ -688,19 +1000,77 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
         case TOKEN_OPERATOR_REL_LT:
         case TOKEN_OPERATOR_REL_NE:
         {
-            return;
-        }
+            auto binary_operator = GetBinaryOperator(operator_type);
 
+            auto result_variable_name = GetNextVariableName();
+            auto true_label = GetNextLabelName();
+            auto exit_label = GetNextLabelName();
+
+            preparation_sequence.push_back(instruction_generator_.GenerateIf(
+                instruction_generator_.GenerateBinaryOperation(
+                    binary_operator,
+                    l_exp->GetFinalValue(),
+                    r_exp->GetFinalValue()),
+                true_label));
+
+            preparation_sequence.push_back(instruction_generator_.GenerateAssign(
+                result_variable_name,
+                instruction_generator_.GenerateImm(0)));
+
+            preparation_sequence.push_back(instruction_generator_.GenerateGoto(exit_label));
+
+            preparation_sequence.push_back(instruction_generator_.GenerateLabel(true_label));
+
+            preparation_sequence.push_back(instruction_generator_.GenerateAssign(
+                result_variable_name,
+                instruction_generator_.GenerateImm(1)));
+
+            preparation_sequence.push_back(instruction_generator_.GenerateLabel(exit_label));
+
+            return std::make_shared<ExpValue>(
+                preparation_sequence,
+                result_variable_name,
+                std::make_shared<ArithmeticSymbol>(
+                    -1,
+                    "",
+                    ArithmeticSymbolType::INT));
+        }
         case TOKEN_OPERATOR_ADD:
         case TOKEN_OPERATOR_SUB:
         case TOKEN_OPERATOR_MUL:
         case TOKEN_OPERATOR_DIV:
         {
-            return;
+            auto binary_operator = GetBinaryOperator(operator_type);
+            if (force_singular)
+            {
+                auto variable_name = GetNextVariableName();
+                preparation_sequence.push_back(
+                    instruction_generator_.GenerateAssign(
+                        variable_name,
+                        instruction_generator_.GenerateBinaryOperation(
+                            binary_operator,
+                            l_exp->GetFinalValue(),
+                            r_exp->GetFinalValue())));
+
+                return std::make_shared<ExpValue>(
+                    preparation_sequence,
+                    variable_name,
+                    l_exp->GetSourceType());
+            }
+            else
+            {
+                return std::make_shared<ExpValue>(
+                    preparation_sequence,
+                    instruction_generator_.GenerateBinaryOperation(
+                        binary_operator,
+                        l_exp->GetFinalValue(),
+                        r_exp->GetFinalValue()),
+                    l_exp->GetSourceType());
+            }
         }
 
         default:
-            return;
+            return nullptr;
         }
     }
 }
@@ -711,7 +1081,7 @@ std::vector<ExpValueSharedPtr> IrGenerator::DoArgs(const KTreeNode *node)
     // Args: Exp COMMA Args | Exp
     while (node != NULL)
     {
-        auto arg_exp = DoExp(node->l_child, true);
+        auto arg_exp = DoExp(node->l_child, true, false);
 
         if (arg_exp == nullptr)
         {
