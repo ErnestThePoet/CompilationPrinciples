@@ -38,8 +38,8 @@ class IrGenerator
 private:
     bool is_started_;
     bool has_error_;
-    const SymbolTable symbol_table_;
-    const StructDefSymbolTable struct_def_symbol_table_;
+    SymbolTable symbol_table_;
+    StructDefSymbolTable struct_def_symbol_table_;
 
     // Maps symbol name to IR variable name
     std::unordered_map<std::string, std::string> ir_variable_table_;
@@ -62,6 +62,7 @@ public:
           next_variable_id_(0),
           next_label_id_(0),
           struct_def_symbol_table_(struct_def_symbol_table) {}
+    IrGenerator() : IrGenerator(SymbolTable(), StructDefSymbolTable()) {}
 
     ~IrGenerator() = default;
 
@@ -95,7 +96,7 @@ private:
     void ConcatenateIrSequence(IrSequence &seq1, const IrSequence &seq2) const;
     void AppendIrSequence(const IrSequence &instruction);
 
-    void DoExtDefList(const KTreeNode *node);
+    bool DoExtDefList(const KTreeNode *node);
     bool DoExtDef(const KTreeNode *node);
     IrSequenceGenerationResult DoExtDecList(const KTreeNode *node);
     IrSequenceGenerationResult DoDefList(const KTreeNode *node);

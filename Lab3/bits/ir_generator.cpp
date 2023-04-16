@@ -1,5 +1,26 @@
 #include "ir_generator.h"
 
+IrGenerator &IrGenerator::operator=(const IrGenerator &) = default;
+IrGenerator &IrGenerator::operator=(IrGenerator &&) = default;
+
+void IrGenerator::Generate(const KTreeNode *node)
+{
+    if (is_started_)
+    {
+        return;
+    }
+
+    if (!node->value->is_token &&
+        node->value->ast_node_value.variable->type == VARIABLE_EXT_DEF_LIST)
+    {
+        is_started_ = true;
+        if (!DoExtDefList(node))
+        {
+            return;
+        }
+    }
+}
+
 void IrGenerator::PrintError(const std::string &message)
 {
     has_error_ = true;
@@ -140,17 +161,20 @@ void IrGenerator::AppendIrSequence(const IrSequence &ir_sequence)
     ConcatenateIrSequence(ir_sequence_, ir_sequence);
 }
 
-void IrGenerator::DoExtDefList(const KTreeNode *node)
+// Returns whether there's no translation error
+bool IrGenerator::DoExtDefList(const KTreeNode *node)
 {
     // ExtDefList: ExtDef ExtDefList(Nullable) | <NULL>
     while (node != NULL)
     {
         if (!DoExtDef(node->l_child))
         {
-            return;
+            return false;
         }
         node = node->r_child;
     }
+
+    return true;
 }
 
 // [INSERTS-IR]
@@ -443,6 +467,8 @@ IrSequenceGenerationResult IrGenerator::DoStmtList(const KTreeNode *node)
         ConcatenateIrSequence(sequence, statement.second);
         node = node->r_child;
     }
+
+    return {true, sequence};
 }
 
 IrSequenceGenerationResult IrGenerator::DoStmt(const KTreeNode *node)
@@ -981,6 +1007,7 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
                     expression->GetSourceType(),
                     expression->GetCurrentDim() + 1,
                     expression->GetArrayDimSizes(),
+                    expression->GetArrayElementType(),
                     expression->GetArrayElementSize());
             }
         }

@@ -22,7 +22,7 @@ private:
 public:
     ArrayElementExpValue(const std::vector<std::string> &preparation_sequence,
                          const std::string &final_value,
-                         const std::shared_ptr<ArraySymbol> &source_type,
+                         const VariableSymbolSharedPtr &source_type,
                          const size_t current_dim,
                          const std::vector<size_t> &array_dim_sizes,
                          const VariableSymbolSharedPtr &array_element_type,
