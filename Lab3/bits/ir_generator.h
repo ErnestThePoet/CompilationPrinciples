@@ -53,7 +53,7 @@ private:
 
     IrSequence ir_sequence_;
 
-    IrSequenceGenerationResult kErrorIrSequenceGenerationResult = {false, IrSequence()};
+    const IrSequenceGenerationResult kErrorIrSequenceGenerationResult;
 
 public:
     IrGenerator(const SymbolTable &symbol_table,
@@ -63,7 +63,8 @@ public:
           symbol_table_(symbol_table),
           struct_def_symbol_table_(struct_def_symbol_table),
           next_variable_id_(0),
-          next_label_id_(0) {}
+          next_label_id_(0),
+          kErrorIrSequenceGenerationResult({false, IrSequence()}) {}
     IrGenerator() : IrGenerator(SymbolTable(), StructDefSymbolTable()) {}
 
     ~IrGenerator() = default;
