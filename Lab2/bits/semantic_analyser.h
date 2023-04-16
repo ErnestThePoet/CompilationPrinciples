@@ -72,11 +72,8 @@ public:
 
     ~SemanticAnalyser() = default;
 
-    SemanticAnalyser(const SemanticAnalyser &) = default;
-    SemanticAnalyser &operator=(const SemanticAnalyser &);
-
-    SemanticAnalyser(SemanticAnalyser &&) = default;
-    SemanticAnalyser &operator=(SemanticAnalyser &&);
+    SemanticAnalyser(const SemanticAnalyser &) = delete;
+    SemanticAnalyser &operator=(const SemanticAnalyser &rhs) = delete;
 
     void Analyse(const KTreeNode *node);
 
