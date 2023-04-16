@@ -1246,7 +1246,7 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
                 return kNullptrFalse;
             }
 
-            auto index_exp = DoExp(node->l_child);
+            auto index_exp = DoExp(node->l_child->r_sibling->r_sibling);
             if (!index_exp.first)
             {
                 return kNullptrFalse;
