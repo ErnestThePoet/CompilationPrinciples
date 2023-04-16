@@ -1070,13 +1070,13 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
                 if (fields[i]->GetName() == field_name)
                 {
                     auto preparation_sequence = expression->GetPreparationSequence();
+                    
                     // A previously-used strategy is to save an addition when field_offset=0.
                     // However, this requires calling DoExp() with singular_no_prefix=true,
                     // which will cause additional aliasing to the struct address for every 
                     // field not at offset 0. This overweights the saved addition which 
                     // applied to first field only.
                     // The same thing is for array.
-
                     auto address_name = GetNextVariableName();
                     preparation_sequence.push_back(
                         instruction_generator_.GenerateAssign(
