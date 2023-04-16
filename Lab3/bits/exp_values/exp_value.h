@@ -4,7 +4,7 @@
 #include <vector>
 #include <memory>
 
-#include "../../Lab2/bits/symbols/variable_symbol.h"
+#include "../../../Lab2/bits/symbols/variable_symbol.h"
 
 class ExpValue
 {
