@@ -19,11 +19,25 @@ void SemanticAnalyser::PrintKTreeNodeInfo(const KTreeNode *node) const
 {
     if (node->value->is_token)
     {
-        std::cout << "Token, type=" << (node->value->ast_node_value.token->type) << std::endl;
+        std::cout << "Token, Type="
+                  << (node->value->ast_node_value.token->type)
+                  << " Value="
+                  << (node->value->ast_node_value.token->value)
+                  << " LineNumber="
+                  << (node->value->ast_node_value.token->line_start)
+                  << " ColumnNumber="
+                  << (node->value->ast_node_value.token->column_start)
+                  << std::endl;
     }
     else
     {
-        std::cout << "Variable, type=" << (node->value->ast_node_value.variable->type) << std::endl;
+        std::cout << "Variable, Type="
+                  << (node->value->ast_node_value.variable->type)
+                  << " LineNumber="
+                  << (node->value->ast_node_value.variable->line_start)
+                  << " ColumnNumber="
+                  << (node->value->ast_node_value.variable->column_start)
+                  << std::endl;
     }
 }
 
