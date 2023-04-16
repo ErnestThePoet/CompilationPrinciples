@@ -72,7 +72,7 @@ std::string InstructionGenerator::GenerateReturn(const std::string &value) const
 
 std::string InstructionGenerator::GenerateDec(const std::string &variable, const size_t size) const
 {
-    return "DEC " + variable + " [" + std::to_string(size) + ']';
+    return "DEC " + variable + ' ' + std::to_string(size);
 }
 
 std::string InstructionGenerator::GenerateArg(const std::string &value) const

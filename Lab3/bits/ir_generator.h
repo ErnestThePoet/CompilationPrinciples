@@ -43,6 +43,8 @@ private:
 
     // Maps symbol name to IR variable name
     std::unordered_map<std::string, std::string> ir_variable_table_;
+    // Maps symbol name to whether it's a function parameter
+    std::unordered_map<std::string, bool> is_parameter_symbol_;
 
     InstructionGenerator instruction_generator_;
 

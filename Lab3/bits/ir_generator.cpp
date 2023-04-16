@@ -253,6 +253,7 @@ IrSequenceGenerationResult IrGenerator::DoExtDecList(const KTreeNode *node)
         auto symbol = symbol_table_.at(DoVarDec(node->l_child));
         auto variable_name = GetNextVariableName();
         ir_variable_table_[symbol->GetName()] = variable_name;
+        is_parameter_symbol_[symbol->GetName()] = false;
 
         switch (symbol->GetVariableSymbolType())
         {
@@ -283,6 +284,8 @@ IrSequenceGenerationResult IrGenerator::DoDefList(const KTreeNode *node)
         {
             return kErrorIrSequenceGenerationResult;
         }
+
+        ConcatenateIrSequence(sequence, def.second);
 
         node = node->r_child;
     }
@@ -327,6 +330,7 @@ IrSequenceGenerationResult IrGenerator::DoDec(const KTreeNode *node)
     auto symbol = symbol_table_.at(var_dec);
     auto variable_name = GetNextVariableName();
     ir_variable_table_[symbol->GetName()] = variable_name;
+    is_parameter_symbol_[symbol->GetName()] = false;
 
     switch (symbol->GetVariableSymbolType())
     {
@@ -397,6 +401,7 @@ IrSequenceGenerationResult IrGenerator::DoFunDec(const KTreeNode *node)
         {
             auto param_variable_name = GetNextVariableName();
             ir_variable_table_[function_args[i]->GetName()] = param_variable_name;
+            is_parameter_symbol_[function_args[i]->GetName()] = true;
             sequence.push_back(instruction_generator_.GenerateParam(
                 param_variable_name));
         }
@@ -675,6 +680,12 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
             {
                 auto symbol = symbol_table_.at(token_value);
                 auto ir_variable_name = ir_variable_table_.at(token_value);
+                auto is_parameter = is_parameter_symbol_.at(token_value);
+
+                auto address_final_value =
+                    is_parameter
+                        ? ir_variable_name
+                        : instruction_generator_.GenerateAddress(ir_variable_name);
 
                 switch (symbol->GetVariableSymbolType())
                 {
@@ -690,8 +701,7 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
                         auto address_name = GetNextVariableName();
                         return std::make_shared<ArrayElementExpValue>(
                             IrSequence({instruction_generator_.GenerateAssign(
-                                address_name,
-                                instruction_generator_.GenerateAddress(ir_variable_name))}),
+                                address_name, address_final_value)}),
                             address_name,
                             symbol,
                             0,
@@ -703,7 +713,7 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
                     {
                         return std::make_shared<ArrayElementExpValue>(
                             IrSequence(),
-                            instruction_generator_.GenerateAddress(ir_variable_name),
+                            address_final_value,
                             symbol,
                             0,
                             std::get<0>(array_info),
@@ -720,8 +730,7 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
                         auto address_name = GetNextVariableName();
                         return std::make_shared<ExpValue>(
                             IrSequence({instruction_generator_.GenerateAssign(
-                                address_name,
-                                instruction_generator_.GenerateAddress(ir_variable_name))}),
+                                address_name, address_final_value)}),
                             address_name,
                             symbol);
                     }
@@ -729,7 +738,7 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
                     {
                         return std::make_shared<ExpValue>(
                             IrSequence(),
-                            instruction_generator_.GenerateAddress(ir_variable_name),
+                            address_final_value,
                             symbol);
                     }
                 }
@@ -1040,7 +1049,7 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
 
         case TOKEN_OPERATOR_DOT:
         {
-            auto expression = DoExp(node->l_child, true, false);
+            auto expression = DoExp(node->l_child, true, true);
 
             if (!expression)
             {
@@ -1385,7 +1394,7 @@ std::vector<ExpValueSharedPtr> IrGenerator::DoArgs(const KTreeNode *node)
         {
             args.push_back(std::make_shared<ExpValue>(
                 arg_exp->GetPreparationSequence(),
-                instruction_generator_.GenerateAddress(arg_exp->GetFinalValue()),
+                arg_exp->GetFinalValue(),
                 nullptr));
             break;
         }
