@@ -21,6 +21,32 @@ void IrGenerator::Generate(const KTreeNode *node)
     }
 }
 
+void IrGenerator::PrintKTreeNodeInfo(const KTreeNode *node) const
+{
+    if (node->value->is_token)
+    {
+        std::cout << "Token, Type="
+                  << (node->value->ast_node_value.token->type)
+                  << " Value="
+                  << (node->value->ast_node_value.token->value)
+                  << " LineNumber="
+                  << (node->value->ast_node_value.token->line_start)
+                  << " ColumnNumber="
+                  << (node->value->ast_node_value.token->column_start)
+                  << std::endl;
+    }
+    else
+    {
+        std::cout << "Variable, Type="
+                  << (node->value->ast_node_value.variable->type)
+                  << " LineNumber="
+                  << (node->value->ast_node_value.variable->line_start)
+                  << " ColumnNumber="
+                  << (node->value->ast_node_value.variable->column_start)
+                  << std::endl;
+    }
+}
+
 void IrGenerator::PrintError(const std::string &message)
 {
     has_error_ = true;
@@ -196,7 +222,7 @@ bool IrGenerator::DoExtDef(const KTreeNode *node)
         AppendIrSequence(ext_decs.second);
     }
     // ExtDef: Specifier FunDec CompSt
-    else
+    else if (node->l_child->r_sibling->value->ast_node_value.variable->type == VARIABLE_FUN_DEC)
     {
         auto fun_dec = DoFunDec(node->l_child->r_sibling);
         if (!fun_dec.first)

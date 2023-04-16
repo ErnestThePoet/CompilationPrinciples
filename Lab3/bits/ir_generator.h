@@ -85,6 +85,9 @@ public:
     }
 
 private:
+    // Debug only
+    void PrintKTreeNodeInfo(const KTreeNode *node) const;
+    
     void PrintError(const std::string &message);
     std::string GetNextVariableName();
     std::string GetNextLabelName();
