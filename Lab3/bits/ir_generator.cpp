@@ -953,13 +953,14 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
         // Exp : Exp L_SQUARE Exp R_SQUARE
         case TOKEN_DELIMITER_L_SQUARE:
         {
-            auto expression = static_cast<ArrayElementExpValue *>(
-                DoExp(node->l_child, true, false).get());
+            auto expression = DoExp(node->l_child, true, false);
 
             if (!expression)
             {
                 return nullptr;
             }
+
+            auto array_expression = static_cast<ArrayElementExpValue *>(expression.get());
 
             auto index_exp = DoExp(node->l_child->r_sibling->r_sibling, true, false);
 
@@ -972,9 +973,9 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
             auto preparation_sequence = expression->GetPreparationSequence();
             ConcatenateIrSequence(preparation_sequence, index_exp->GetPreparationSequence());
 
-            size_t offset_size = expression->GetArrayElementSize();
-            auto array_dim_sizes = expression->GetArrayDimSizes();
-            for (size_t i = expression->GetCurrentDim() + 1;
+            size_t offset_size = array_expression->GetArrayElementSize();
+            auto array_dim_sizes = array_expression->GetArrayDimSizes();
+            for (size_t i = array_expression->GetCurrentDim();
                  i < array_dim_sizes.size();
                  i++)
             {
@@ -999,16 +1000,16 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
                     mul_result_name)));
 
             // currently at last dim
-            if (expression->GetCurrentDim() + 1 == array_dim_sizes.size())
+            if (array_expression->GetCurrentDim() + 1 == array_dim_sizes.size())
             {
                 // if element is struct, still generate an address
-                if (expression->GetArrayElementType()->GetVariableSymbolType() ==
+                if (array_expression->GetArrayElementType()->GetVariableSymbolType() ==
                     VariableSymbolType::STRUCT)
                 {
                     return std::make_shared<ExpValue>(
                         preparation_sequence,
                         next_address_base_name,
-                        expression->GetArrayElementType());
+                        array_expression->GetArrayElementType());
                 }
                 else
                 {
@@ -1022,14 +1023,14 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
                         return std::make_shared<ExpValue>(
                             preparation_sequence,
                             variable_name,
-                            expression->GetArrayElementType());
+                            array_expression->GetArrayElementType());
                     }
                     else
                     {
                         return std::make_shared<ExpValue>(
                             preparation_sequence,
                             instruction_generator_.GenerateDereference(next_address_base_name),
-                            expression->GetArrayElementType());
+                            array_expression->GetArrayElementType());
                     }
                 }
             }
@@ -1039,11 +1040,11 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
                 return std::make_shared<ArrayElementExpValue>(
                     preparation_sequence,
                     next_address_base_name,
-                    expression->GetSourceType(),
-                    expression->GetCurrentDim() + 1,
-                    expression->GetArrayDimSizes(),
-                    expression->GetArrayElementType(),
-                    expression->GetArrayElementSize());
+                    array_expression->GetSourceType(),
+                    array_expression->GetCurrentDim() + 1,
+                    array_expression->GetArrayDimSizes(),
+                    array_expression->GetArrayElementType(),
+                    array_expression->GetArrayElementSize());
             }
         }
 
@@ -1070,11 +1071,11 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
                 if (fields[i]->GetName() == field_name)
                 {
                     auto preparation_sequence = expression->GetPreparationSequence();
-                    
+
                     // A previously-used strategy is to save an addition when field_offset=0.
                     // However, this requires calling DoExp() with singular_no_prefix=true,
-                    // which will cause additional aliasing to the struct address for every 
-                    // field not at offset 0. This overweights the saved addition which 
+                    // which will cause additional aliasing to the struct address for every
+                    // field not at offset 0. This overweights the saved addition which
                     // applied to first field only.
                     // The same thing is for array.
                     auto address_name = GetNextVariableName();
