@@ -34,10 +34,10 @@ class SemanticAnalyser
 {
 private:
     bool has_error_;
-    
+
     SymbolTable symbol_table_;
     StructDefSymbolTable struct_def_symbol_table_;
-    
+
     std::random_device random_device_;
     std::mt19937 mt19937_;
     std::uniform_int_distribution<> distribution_;
@@ -65,9 +65,10 @@ private:
     static constexpr int kErrorUndefinedStruct = 17;          // Impled
 
 public:
-    SemanticAnalyser(const SymbolTable &builtin_symbols) : has_error_(false),
-                                                           symbol_table_(builtin_symbols),
-                                                           mt19937_(random_device_()) {}
+    SemanticAnalyser(const SymbolTable &builtin_symbols)
+        : has_error_(false),
+          symbol_table_(builtin_symbols),
+          mt19937_(random_device_()) {}
     SemanticAnalyser() : SemanticAnalyser(SymbolTable()) {}
 
     void Analyse(const KTreeNode *root);

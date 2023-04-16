@@ -7,7 +7,7 @@ void IrGenerator::Generate(const KTreeNode *root)
         !root->l_child->value->is_token &&
         root->l_child->value->ast_node_value.variable->type == VARIABLE_EXT_DEF_LIST)
     {
-        if (!DoExtDefList(root))
+        if (!DoExtDefList(root->l_child))
         {
             return;
         }
