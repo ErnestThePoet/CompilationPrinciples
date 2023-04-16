@@ -1,23 +1,20 @@
 #include "ir_generator.h"
 
-IrGenerator &IrGenerator::operator=(const IrGenerator &) = default;
-IrGenerator &IrGenerator::operator=(IrGenerator &&) = default;
-
-void IrGenerator::Generate(const KTreeNode *node)
+void IrGenerator::Generate(const KTreeNode *root)
 {
-    if (is_started_)
+    if (root != NULL &&
+        root->l_child != NULL &&
+        !root->l_child->value->is_token &&
+        root->l_child->value->ast_node_value.variable->type == VARIABLE_EXT_DEF_LIST)
     {
-        return;
-    }
-
-    if (!node->value->is_token &&
-        node->value->ast_node_value.variable->type == VARIABLE_EXT_DEF_LIST)
-    {
-        is_started_ = true;
-        if (!DoExtDefList(node))
+        if (!DoExtDefList(root))
         {
             return;
         }
+    }
+    else
+    {
+        PrintError("Invalid root node");
     }
 }
 

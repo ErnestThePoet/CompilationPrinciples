@@ -15,16 +15,10 @@ extern "C"
 KTreeNode *kRoot = NULL;
 bool kHasLexicalError = false;
 bool kHasSyntaxError = false;
-SemanticAnalyser kSemanticAnalyser;
 
 void FreeKTreeNode(KTreeNodeValue *node)
 {
     AstNodeFree(*node);
-}
-
-void SemanticAnalyse(KTreeNode *root, size_t, void *)
-{
-    kSemanticAnalyser.Analyse(root);
 }
 
 int main(int argc, char *argv[])
@@ -54,13 +48,14 @@ int main(int argc, char *argv[])
         return FAILURE;
     }
 
-    KTreePreOrderTraverse(kRoot, SemanticAnalyse, NULL);
+    SemanticAnalyser semantic_analyser;
 
-    // if (!kSemanticAnalyser.GetHasError())
-    // {
-    //     kSemanticAnalyser.PrintStructDefSymbolTable();
-    //     kSemanticAnalyser.PrintSymbolTable();
-    // }
+    semantic_analyser.Analyse(kRoot);
+    if (semantic_analyser.GetHasError())
+    {
+        KTreeFree(kRoot, FreeKTreeNode);
+        return FAILURE;
+    }
 
     KTreeFree(kRoot, FreeKTreeNode);
 

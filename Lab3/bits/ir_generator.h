@@ -36,10 +36,10 @@ using IrSequenceGenerationResult = std::pair<bool, IrSequence>;
 class IrGenerator
 {
 private:
-    bool is_started_;
     bool has_error_;
-    SymbolTable symbol_table_;
-    StructDefSymbolTable struct_def_symbol_table_;
+    
+    const SymbolTable symbol_table_;
+    const StructDefSymbolTable struct_def_symbol_table_;
 
     // Maps symbol name to IR variable name
     std::unordered_map<std::string, std::string> ir_variable_table_;
@@ -58,8 +58,7 @@ private:
 public:
     IrGenerator(const SymbolTable &symbol_table,
                 const StructDefSymbolTable &struct_def_symbol_table)
-        : is_started_(false),
-          has_error_(false),
+        : has_error_(false),
           symbol_table_(symbol_table),
           struct_def_symbol_table_(struct_def_symbol_table),
           next_variable_id_(0),
@@ -67,15 +66,7 @@ public:
           kErrorIrSequenceGenerationResult({false, IrSequence()}) {}
     IrGenerator() : IrGenerator(SymbolTable(), StructDefSymbolTable()) {}
 
-    ~IrGenerator() = default;
-
-    IrGenerator(const IrGenerator &) = default;
-    IrGenerator &operator=(const IrGenerator &);
-
-    IrGenerator(IrGenerator &&) = default;
-    IrGenerator &operator=(IrGenerator &&);
-
-    void Generate(const KTreeNode *node);
+    void Generate(const KTreeNode *root);
 
     bool GetHasError() const
     {

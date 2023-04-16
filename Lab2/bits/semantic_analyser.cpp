@@ -1,17 +1,17 @@
 #include "semantic_analyser.h"
 
-void SemanticAnalyser::Analyse(const KTreeNode *node)
+void SemanticAnalyser::Analyse(const KTreeNode *root)
 {
-    if (is_started_)
+    if (root != NULL &&
+        root->l_child != NULL &&
+        !root->l_child->value->is_token &&
+        root->l_child->value->ast_node_value.variable->type == VARIABLE_EXT_DEF_LIST)
     {
-        return;
+        DoExtDefList(root->l_child);
     }
-
-    if (!node->value->is_token &&
-        node->value->ast_node_value.variable->type == VARIABLE_EXT_DEF_LIST)
+    else
     {
-        DoExtDefList(node);
-        is_started_ = true;
+        PrintError(-1, 0, "Invalid root node");
     }
 }
 

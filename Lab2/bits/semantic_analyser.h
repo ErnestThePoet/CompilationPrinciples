@@ -33,10 +33,11 @@ using StructDefSymbolTable = std::unordered_map<std::string, StructDefSymbolShar
 class SemanticAnalyser
 {
 private:
-    bool is_started_;
     bool has_error_;
+    
     SymbolTable symbol_table_;
     StructDefSymbolTable struct_def_symbol_table_;
+    
     std::random_device random_device_;
     std::mt19937 mt19937_;
     std::uniform_int_distribution<> distribution_;
@@ -64,18 +65,12 @@ private:
     static constexpr int kErrorUndefinedStruct = 17;          // Impled
 
 public:
-    SemanticAnalyser(const SymbolTable &builtin_symbols) : is_started_(false),
-                                                           has_error_(false),
+    SemanticAnalyser(const SymbolTable &builtin_symbols) : has_error_(false),
                                                            symbol_table_(builtin_symbols),
                                                            mt19937_(random_device_()) {}
     SemanticAnalyser() : SemanticAnalyser(SymbolTable()) {}
 
-    ~SemanticAnalyser() = default;
-
-    SemanticAnalyser(const SemanticAnalyser &) = delete;
-    SemanticAnalyser &operator=(const SemanticAnalyser &rhs) = delete;
-
-    void Analyse(const KTreeNode *node);
+    void Analyse(const KTreeNode *root);
 
     // Debug only
     void PrintKTreeNodeInfo(const KTreeNode *node) const;

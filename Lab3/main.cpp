@@ -19,44 +19,9 @@ KTreeNode *kRoot = NULL;
 bool kHasLexicalError = false;
 bool kHasSyntaxError = false;
 
-SemanticAnalyser kSemanticAnalyser(
-    {{"read",
-      std::make_shared<FunctionSymbol>(
-          -1,
-          "read",
-          std::vector<VariableSymbolSharedPtr>(),
-          std::make_shared<ArithmeticSymbol>(
-              -1,
-              "",
-              ArithmeticSymbolType::INT))},
-     {"write",
-      std::make_shared<FunctionSymbol>(
-          -1,
-          "write",
-          std::vector<VariableSymbolSharedPtr>({std::make_shared<ArithmeticSymbol>(
-              -1,
-              "value",
-              ArithmeticSymbolType::INT)}),
-          std::make_shared<ArithmeticSymbol>(
-              -1,
-              "",
-              ArithmeticSymbolType::INT))}});
-
-IrGenerator kIrGenerator;
-
 void FreeKTreeNode(KTreeNodeValue *node)
 {
     AstNodeFree(*node);
-}
-
-void SemanticAnalyse(KTreeNode *root, size_t, void *)
-{
-    kSemanticAnalyser.Analyse(root);
-}
-
-void GenerateIr(KTreeNode *root, size_t, void *)
-{
-    kIrGenerator.Generate(root);
 }
 
 int main(int argc, char *argv[])
@@ -85,20 +50,43 @@ int main(int argc, char *argv[])
         return FAILURE;
     }
 
-    KTreePreOrderTraverse(kRoot, SemanticAnalyse, NULL);
+    SymbolTable built_in_symbol_table = {
+        {"read",
+         std::make_shared<FunctionSymbol>(
+             -1,
+             "read",
+             std::vector<VariableSymbolSharedPtr>(),
+             std::make_shared<ArithmeticSymbol>(
+                 -1,
+                 "",
+                 ArithmeticSymbolType::INT))},
+        {"write",
+         std::make_shared<FunctionSymbol>(
+             -1,
+             "write",
+             std::vector<VariableSymbolSharedPtr>({std::make_shared<ArithmeticSymbol>(
+                 -1,
+                 "value",
+                 ArithmeticSymbolType::INT)}),
+             std::make_shared<ArithmeticSymbol>(
+                 -1,
+                 "",
+                 ArithmeticSymbolType::INT))}};
 
-    if (kSemanticAnalyser.GetHasError())
+    SemanticAnalyser semantic_analyser(built_in_symbol_table);
+
+    semantic_analyser.Analyse(kRoot);
+    if (semantic_analyser.GetHasError())
     {
         KTreeFree(kRoot, FreeKTreeNode);
         return FAILURE;
     }
 
-    kIrGenerator = IrGenerator(kSemanticAnalyser.GetSymbolTable(),
-                               kSemanticAnalyser.GetStructDefSymbolTable());
+    IrGenerator ir_generator(semantic_analyser.GetSymbolTable(),
+                             semantic_analyser.GetStructDefSymbolTable());
 
-    KTreePreOrderTraverse(kRoot, GenerateIr, NULL);
-
-    if (kIrGenerator.GetHasError())
+    ir_generator.Generate(kRoot);
+    if (ir_generator.GetHasError())
     {
         KTreeFree(kRoot, FreeKTreeNode);
         return FAILURE;
@@ -112,7 +100,7 @@ int main(int argc, char *argv[])
         return FAILURE;
     }
 
-    auto ir_sequence = kIrGenerator.GetIrSequence();
+    auto ir_sequence = ir_generator.GetIrSequence();
 
     for (auto &ir : ir_sequence)
     {
