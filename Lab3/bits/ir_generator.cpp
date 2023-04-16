@@ -957,6 +957,10 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
         // Exp : Exp L_SQUARE Exp R_SQUARE
         case TOKEN_DELIMITER_L_SQUARE:
         {
+            // We must not acquire array_expression by static_cast<>(DoExp().get())
+            // in which case the shared_ptr will be destructed immediately and
+            // the pointer object is also destructed.
+            // We must keep a reference to the original shared_ptr.
             auto expression = DoExp(node->l_child, true, false);
 
             if (!expression)
@@ -974,7 +978,7 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
             }
 
             // accumulate current offset
-            auto preparation_sequence = expression->GetPreparationSequence();
+            auto preparation_sequence = array_expression->GetPreparationSequence();
             ConcatenateIrSequence(preparation_sequence, index_exp->GetPreparationSequence());
 
             size_t offset_size = array_expression->GetArrayElementSize();
@@ -1000,7 +1004,7 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
                 next_address_base_name,
                 instruction_generator_.GenerateBinaryOperation(
                     InstructionGenerator::kBinaryOperatorAdd,
-                    expression->GetFinalValue(),
+                    array_expression->GetFinalValue(),
                     mul_result_name)));
 
             // currently at last dim
