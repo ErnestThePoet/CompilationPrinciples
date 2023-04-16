@@ -265,6 +265,8 @@ IrSequenceGenerationResult IrGenerator::DoExtDecList(const KTreeNode *node)
                 GetVariableSize(*symbol)));
             break;
         }
+        default:
+            break;
         }
 
         node = node->r_child;
@@ -342,6 +344,8 @@ IrSequenceGenerationResult IrGenerator::DoDec(const KTreeNode *node)
             GetVariableSize(*symbol)));
         break;
     }
+    default:
+        break;
     }
 
     if (node->l_child->r_sibling == NULL)

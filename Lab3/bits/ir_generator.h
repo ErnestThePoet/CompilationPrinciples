@@ -61,9 +61,9 @@ public:
         : is_started_(false),
           has_error_(false),
           symbol_table_(symbol_table),
+          struct_def_symbol_table_(struct_def_symbol_table),
           next_variable_id_(0),
-          next_label_id_(0),
-          struct_def_symbol_table_(struct_def_symbol_table) {}
+          next_label_id_(0) {}
     IrGenerator() : IrGenerator(SymbolTable(), StructDefSymbolTable()) {}
 
     ~IrGenerator() = default;
@@ -89,7 +89,7 @@ public:
 private:
     // Debug only
     void PrintKTreeNodeInfo(const KTreeNode *node) const;
-    
+
     void PrintError(const std::string &message);
     std::string GetNextVariableName();
     std::string GetNextLabelName();
