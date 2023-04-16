@@ -466,7 +466,8 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDecListDefCommon(
                         "Cannot assign '" +
                             GetVariableSymbolTypeName(dec) +
                             "' to a variable of type '" +
-                            GetVariableSymbolTypeName(specifier));
+                            GetVariableSymbolTypeName(specifier) +
+                            '\'');
 
                     continue;
                 }
@@ -499,7 +500,8 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDecListDefCommon(
                         "Cannot assign '" +
                             GetVariableSymbolTypeName(dec) +
                             "' to a variable of type '" +
-                            GetVariableSymbolTypeName(specifier));
+                            GetVariableSymbolTypeName(specifier) +
+                            '\'');
 
                     continue;
                 }
@@ -551,7 +553,8 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDecListDefCommon(
                     "Cannot assign '" +
                         GetVariableSymbolTypeName(dec) +
                         "' to a variable of type '" +
-                        GetVariableSymbolTypeName(specifier));
+                        GetVariableSymbolTypeName(specifier) +
+                        '\'');
 
                 continue;
             }
@@ -1137,9 +1140,9 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
                                GetKTreeNodeLineNumber(args_node),
                                "Expected " +
                                    std::to_string(function_args.size()) +
-                                   " arguments, but " +
+                                   " argument(s), but " +
                                    std::to_string(args.size()) +
-                                   " were given");
+                                   " given");
                     return kNullptrFalse;
                 }
 
@@ -1151,7 +1154,7 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
                                    args[i]->GetLineNumber(),
                                    "Expected " +
                                        std::to_string(function_args.size()) +
-                                       " arguments, but " +
+                                       " argument(s), but " +
                                        std::to_string(args.size()) +
                                        " given");
                         return kNullptrFalse;
@@ -1167,7 +1170,7 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
                                GetKTreeNodeLineNumber(args_node),
                                "Expected " +
                                    std::to_string(function_args.size()) +
-                                   " arguments, but 0 given");
+                                   " argument(s), but 0 given");
                     return kNullptrFalse;
                 }
             }
@@ -1351,7 +1354,8 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
                     "Cannot assign '" +
                         GetVariableSymbolTypeName(r_exp.first) +
                         "' to a variable of type '" +
-                        GetVariableSymbolTypeName(l_exp.first));
+                        GetVariableSymbolTypeName(l_exp.first) +
+                        '\'');
 
                 return kNullptrFalse;
             }
