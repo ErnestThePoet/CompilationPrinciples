@@ -2,7 +2,7 @@ int main()
 {
     /*
     comment
-    */
+    /*
     nested comment */
     */
     */
