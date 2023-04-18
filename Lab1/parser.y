@@ -71,12 +71,14 @@ void yyerror(const char* msg){
 %type <k_tree_node> Exp Args
 %type <k_tree_node> OptTag Tag
 
+// First declaration has lowest precedence
 %right ASSIGN
-%right NOT
 %left OR
 %left AND
 %left RELOP
-%left ADD SUB MUL DIV
+%left ADD SUB
+%left MUL DIV
+%right NOT
 %left DOT
 %left L_BRACKET R_BRACKET
 %left L_BRACE R_BRACE
