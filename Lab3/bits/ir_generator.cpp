@@ -169,6 +169,9 @@ auto IrGenerator::GetArrayInfo(const ArraySymbol &array_variable) const
 
     dim_sizes.push_back(current_array->GetSize());
 
+    // Remember that our semantic analyser stores array element type in reverse order.
+    std::reverse(dim_sizes.begin(), dim_sizes.end());
+
     return {dim_sizes,
             current_array->GetElemType(),
             GetVariableSize(*(current_array->GetElemType()))};
@@ -979,9 +982,9 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
             auto preparation_sequence = array_expression->GetPreparationSequence();
             ConcatenateIrSequence(preparation_sequence, index_exp->GetPreparationSequence());
 
-            size_t offset_size = array_expression->GetArrayElementSize();
+            auto offset_size = array_expression->GetArrayElementSize();
             auto array_dim_sizes = array_expression->GetArrayDimSizes();
-            for (size_t i = array_expression->GetCurrentDim();
+            for (size_t i = array_expression->GetCurrentDim() + 1;
                  i < array_dim_sizes.size();
                  i++)
             {

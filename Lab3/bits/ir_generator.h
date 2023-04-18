@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <tuple>
 #include <utility>
+#include <algorithm>
 
 extern "C"
 {
