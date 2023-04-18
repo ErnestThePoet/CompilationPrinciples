@@ -141,9 +141,9 @@ std::string IrGenerator::GetBinaryOperator(const int type) const
     }
 }
 
-bool IrGenerator::ShouldUseAddress(const VariableSymbolSharedPtr &variable) const
+bool IrGenerator::ShouldPassAddress(const VariableSymbol &variable) const
 {
-    switch (variable->GetVariableSymbolType())
+    switch (variable.GetVariableSymbolType())
     {
     case VariableSymbolType::ARRAY:
     case VariableSymbolType::STRUCT:
@@ -250,7 +250,7 @@ IrSequenceGenerationResult IrGenerator::DoExtDecList(const KTreeNode *node)
         auto symbol = symbol_table_.at(DoVarDec(node->l_child));
         auto variable_name = GetNextVariableName();
         ir_variable_table_[symbol->GetName()] = variable_name;
-        is_parameter_symbol_[symbol->GetName()] = false;
+        is_address_symbol_[symbol->GetName()] = false;
 
         switch (symbol->GetVariableSymbolType())
         {
@@ -329,7 +329,7 @@ IrSequenceGenerationResult IrGenerator::DoDec(const KTreeNode *node)
     auto symbol = symbol_table_.at(var_dec);
     auto variable_name = GetNextVariableName();
     ir_variable_table_[symbol->GetName()] = variable_name;
-    is_parameter_symbol_[symbol->GetName()] = false;
+    is_address_symbol_[symbol->GetName()] = false;
 
     switch (symbol->GetVariableSymbolType())
     {
@@ -402,7 +402,8 @@ IrSequenceGenerationResult IrGenerator::DoFunDec(const KTreeNode *node)
         {
             auto param_variable_name = GetNextVariableName();
             ir_variable_table_[function_args[i]->GetName()] = param_variable_name;
-            is_parameter_symbol_[function_args[i]->GetName()] = true;
+            is_address_symbol_[function_args[i]->GetName()] =
+                ShouldPassAddress(*function_args[i]);
             sequence.push_back(instruction_generator_.GenerateParam(
                 param_variable_name));
         }
@@ -681,10 +682,10 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
             {
                 auto symbol = symbol_table_.at(token_value);
                 auto ir_variable_name = ir_variable_table_.at(token_value);
-                auto is_parameter = is_parameter_symbol_.at(token_value);
+                auto is_address = is_address_symbol_.at(token_value);
 
                 auto address_final_value =
-                    is_parameter
+                    is_address
                         ? ir_variable_name
                         : instruction_generator_.GenerateAddress(ir_variable_name);
 

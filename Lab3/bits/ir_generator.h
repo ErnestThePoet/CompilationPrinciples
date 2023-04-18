@@ -37,14 +37,15 @@ class IrGenerator
 {
 private:
     bool has_error_;
-    
+
     const SymbolTable symbol_table_;
     const StructDefSymbolTable struct_def_symbol_table_;
 
     // Maps symbol name to IR variable name
     std::unordered_map<std::string, std::string> ir_variable_table_;
-    // Maps symbol name to whether it's a function parameter
-    std::unordered_map<std::string, bool> is_parameter_symbol_;
+    // Maps symbol name to whether it's an address
+    // (in C-- this can only be an array/struct parameter)
+    std::unordered_map<std::string, bool> is_address_symbol_;
 
     InstructionGenerator instruction_generator_;
 
@@ -89,7 +90,7 @@ private:
     std::tuple<std::vector<size_t>, VariableSymbolSharedPtr, size_t> GetArrayInfo(
         const ArraySymbol &variable) const;
     std::string GetBinaryOperator(const int type) const;
-    bool ShouldUseAddress(const VariableSymbolSharedPtr &variable) const;
+    bool ShouldPassAddress(const VariableSymbol &variable) const;
     void ConcatenateIrSequence(IrSequence &seq1, const IrSequence &seq2) const;
     void AppendIrSequence(const IrSequence &instruction);
 
