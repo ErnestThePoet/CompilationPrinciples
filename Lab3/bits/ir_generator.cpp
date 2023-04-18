@@ -971,7 +971,7 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
 
             auto array_expression = static_cast<ArrayElementExpValue *>(expression.get());
 
-            auto index_exp = DoExp(node->l_child->r_sibling->r_sibling, true, false);
+            auto index_exp = DoExp(second_child->r_sibling, true, false);
 
             if (!index_exp)
             {
