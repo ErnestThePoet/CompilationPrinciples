@@ -6,6 +6,7 @@
 #include "symbol_type.h"
 
 /****************************************************************
+ * 
  *         Inheritance diagram
  *
  *               Symbol
@@ -17,8 +18,6 @@
  *  |    ...    ------------------------------------
  *  |                    \             \            \
  * ArithmeticSymbol ArraySymbol FunctionSymbol StructSymbol
- *
- * All immutable except ArraySymbol can have its elem_type_ set
  *
  *****************************************************************/
 
@@ -40,6 +39,11 @@ public:
     int GetLineNumber() const
     {
         return line_number_;
+    }
+
+    void SetLineNumber(const int line_number)
+    {
+        line_number_ = line_number;
     }
 
     std::string GetName() const
