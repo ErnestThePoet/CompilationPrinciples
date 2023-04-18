@@ -485,7 +485,7 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoDecListDefCommon(
                 std::string struct_name = static_cast<StructSymbol *>(specifier.get())->GetStructName();
                 if (struct_def_symbol_table_.find(struct_name) == struct_def_symbol_table_.end())
                 {
-                    PrintError(kErrorUndefinedStruct, dec->GetLineNumber(),
+                    PrintError(kErrorUndefinedStruct, specifier->GetLineNumber(),
                                "Undefined struct type: " + GetVariableSymbolTypeName(specifier));
                     continue;
                 }
@@ -1161,11 +1161,11 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
                     {
                         PrintError(kErrorFunctionArgsMismatch,
                                    args[i]->GetLineNumber(),
-                                   "Expected " +
-                                       std::to_string(function_args.size()) +
-                                       " argument(s), but " +
-                                       std::to_string(args.size()) +
-                                       " given");
+                                   "Expected a(n) \'" +
+                                       GetVariableSymbolTypeName(function_args[i]) +
+                                       "\' argument, but \'" +
+                                       GetVariableSymbolTypeName(args[i]) +
+                                       "\' was given");
                         return kNullptrFalse;
                     }
                 }
@@ -1176,7 +1176,7 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
                 if (function_args.size() != 0)
                 {
                     PrintError(kErrorFunctionArgsMismatch,
-                               GetKTreeNodeLineNumber(args_node),
+                               GetKTreeNodeLineNumber(node->l_child->r_sibling),
                                "Expected " +
                                    std::to_string(function_args.size()) +
                                    " argument(s), but 0 given");
@@ -1200,7 +1200,7 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
             if (expression.first->GetVariableSymbolType() != VariableSymbolType::ARITHMETIC)
             {
                 PrintError(kErrorOperandTypeMismatch,
-                           expression.first->GetLineNumber(),
+                           GetKTreeNodeLineNumber(node->r_child),
                            "Not an arithmetic type");
                 return kNullptrFalse;
             }
@@ -1221,7 +1221,7 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
             if (!IsIntArithmeticSymbol(*expression.first))
             {
                 PrintError(kErrorOperandTypeMismatch,
-                           expression.first->GetLineNumber(),
+                           GetKTreeNodeLineNumber(node->r_child),
                            "Logical operator operand is not 'int' type");
                 return kNullptrFalse;
             }
@@ -1252,13 +1252,13 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
             if (array_exp.first->GetVariableSymbolType() != VariableSymbolType::ARRAY)
             {
                 PrintError(kErrorInvalidIndexOperator,
-                           array_exp.first->GetLineNumber(),
+                           GetKTreeNodeLineNumber(second_child),
                            '\'' + GetVariableSymbolTypeName(array_exp.first) + "' type is not indexable");
 
                 return kNullptrFalse;
             }
 
-            auto index_exp = DoExp(node->l_child->r_sibling->r_sibling);
+            auto index_exp = DoExp(second_child->r_sibling);
             if (!index_exp.first)
             {
                 return kNullptrFalse;
@@ -1267,7 +1267,7 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
             if (!IsIntArithmeticSymbol(*index_exp.first))
             {
                 PrintError(kErrorIndexNotInteger,
-                           index_exp.first->GetLineNumber(),
+                           GetKTreeNodeLineNumber(second_child->r_sibling),
                            "Array index must be type 'int'");
 
                 return kNullptrFalse;
@@ -1287,7 +1287,7 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
             if (struct_exp.first->GetVariableSymbolType() != VariableSymbolType::STRUCT)
             {
                 PrintError(kErrorInvalidDotOperator,
-                           struct_exp.first->GetLineNumber(),
+                           GetKTreeNodeLineNumber(second_child),
                            "Dotted expression is not a struct");
                 return kNullptrFalse;
             }
@@ -1349,7 +1349,7 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
             if (!l_exp.second)
             {
                 PrintError(kErrorAssignToRValue,
-                           l_exp.first->GetLineNumber(),
+                           GetKTreeNodeLineNumber(node->l_child),
                            "Cannot assign to a right value");
 
                 return kNullptrFalse;
@@ -1359,7 +1359,7 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
             {
                 PrintError(
                     kErrorAssignTypeMismatch,
-                    r_exp.first->GetLineNumber(),
+                    GetKTreeNodeLineNumber(node->r_child),
                     "Cannot assign '" +
                         GetVariableSymbolTypeName(r_exp.first) +
                         "' to a variable of type '" +
@@ -1378,7 +1378,7 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
             if (!IsIntArithmeticSymbol(*l_exp.first))
             {
                 PrintError(kErrorOperandTypeMismatch,
-                           l_exp.first->GetLineNumber(),
+                           GetKTreeNodeLineNumber(node->l_child),
                            "Logical operator operand is not 'int' type");
                 return kNullptrFalse;
             }
@@ -1386,7 +1386,7 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
             if (!IsIntArithmeticSymbol(*r_exp.first))
             {
                 PrintError(kErrorOperandTypeMismatch,
-                           r_exp.first->GetLineNumber(),
+                           GetKTreeNodeLineNumber(node->r_child),
                            "Logical operator operand is not 'int' type");
                 return kNullptrFalse;
             }
@@ -1404,7 +1404,7 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
             if (!IsSameTypeArithmeticSymbol(*l_exp.first, *r_exp.first))
             {
                 PrintError(kErrorOperandTypeMismatch,
-                           l_exp.first->GetLineNumber(),
+                           GetKTreeNodeLineNumber(second_child),
                            "Relational operator must take two operands of an identical arithmetic type");
 
                 return kNullptrFalse;
@@ -1425,7 +1425,7 @@ std::pair<VariableSymbolSharedPtr, bool> SemanticAnalyser::DoExp(const KTreeNode
             if (!IsSameTypeArithmeticSymbol(*l_exp.first, *r_exp.first))
             {
                 PrintError(kErrorOperandTypeMismatch,
-                           l_exp.first->GetLineNumber(),
+                           GetKTreeNodeLineNumber(second_child),
                            "Mathematical operator must take two operands of an identical arithmetic type");
 
                 return kNullptrFalse;
