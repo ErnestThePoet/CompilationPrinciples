@@ -977,7 +977,16 @@ std::vector<VariableSymbolSharedPtr> SemanticAnalyser::DoStmt(const KTreeNode *n
     // Stmt: RETURN Exp SEMICOLON
     case TOKEN_KEYWORD_RETURN:
     {
-        return {DoExp(node->l_child->r_sibling).first};
+        // Line number for return type should be the line number of RETURN keyword
+        auto expression = DoExp(node->l_child->r_sibling).first;
+        if (!expression)
+        {
+            return {nullptr};
+        }
+
+        expression->SetLineNumber(GetKTreeNodeLineNumber(node->l_child));
+
+        return {expression};
     }
     case TOKEN_KEYWORD_IF:
     {
