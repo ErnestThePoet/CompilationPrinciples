@@ -521,10 +521,16 @@ IrSequenceGenerationResult IrGenerator::DoStmt(const KTreeNode *node)
                 return kErrorIrSequenceGenerationResult;
             }
 
-            // We do not need the final value
+            // We still need the final value in case of Exp is a CALL
+            auto sequence = expression->GetPreparationSequence();
+            // Very bad patch
+            if(expression->GetFinalValue().find("CALL ")==0){
+                sequence.push_back(expression->GetFinalValue());
+            }
+
             return {
                 true,
-                expression->GetPreparationSequence()};
+                sequence};
         }
 
         // Stmt: CompSt
