@@ -259,8 +259,9 @@ IrSequenceGenerationResult IrGenerator::DoExtDecList(const KTreeNode *node)
         {
         case VariableSymbolType::ARRAY:
         case VariableSymbolType::STRUCT:
+        case VariableSymbolType::ARITHMETIC:
         {
-            sequence.push_back(instruction_generator_.GenerateDec(
+            sequence.push_back(instruction_generator_.GenerateGlobalDec(
                 variable_name,
                 GetVariableSize(*symbol)));
             break;
