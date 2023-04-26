@@ -524,7 +524,8 @@ IrSequenceGenerationResult IrGenerator::DoStmt(const KTreeNode *node)
             // We still need the final value in case of Exp is a CALL
             auto sequence = expression->GetPreparationSequence();
             // Very bad patch
-            if(expression->GetFinalValue().find("CALL ")==0){
+            if (expression->GetFinalValue().find("CALL ") == 0)
+            {
                 sequence.push_back(expression->GetFinalValue());
             }
 
@@ -559,7 +560,7 @@ IrSequenceGenerationResult IrGenerator::DoStmt(const KTreeNode *node)
         auto condition_exp_node = node->l_child->r_sibling->r_sibling;
         auto if_stmt_node = condition_exp_node->r_sibling->r_sibling;
 
-        auto condition = DoExp(condition_exp_node, false, false);
+        auto condition = DoExp(condition_exp_node, true, false);
         if (!condition)
         {
             return kErrorIrSequenceGenerationResult;
@@ -579,11 +580,17 @@ IrSequenceGenerationResult IrGenerator::DoStmt(const KTreeNode *node)
         auto exit_label = GetNextLabelName();
 
         sequence_single_branch.push_back(instruction_generator_.GenerateIf(
-            condition->GetFinalValue(),
+            instruction_generator_.GenerateBinaryOperation(
+                InstructionGenerator::kBinaryOperatorNe,
+                condition->GetFinalValue(),
+                instruction_generator_.GenerateImm(0)),
             true_label));
 
         sequence_dual_branch.push_back(instruction_generator_.GenerateIf(
-            condition->GetFinalValue(),
+            instruction_generator_.GenerateBinaryOperation(
+                InstructionGenerator::kBinaryOperatorNe,
+                condition->GetFinalValue(),
+                instruction_generator_.GenerateImm(0)),
             true_label));
 
         sequence_single_branch.push_back(instruction_generator_.GenerateGoto(exit_label));
@@ -621,7 +628,7 @@ IrSequenceGenerationResult IrGenerator::DoStmt(const KTreeNode *node)
     // Stmt: WHILE L_BRACKET Exp R_BRACKET Stmt
     case TOKEN_KEYWORD_WHILE:
     {
-        auto condition = DoExp(node->l_child->r_sibling->r_sibling, false, false);
+        auto condition = DoExp(node->l_child->r_sibling->r_sibling, true, false);
         if (!condition)
         {
             return kErrorIrSequenceGenerationResult;
@@ -637,11 +644,13 @@ IrSequenceGenerationResult IrGenerator::DoStmt(const KTreeNode *node)
         auto body_label = GetNextLabelName();
         auto exit_label = GetNextLabelName();
 
-        IrSequence sequence = condition->GetPreparationSequence();
-
-        sequence.push_back(instruction_generator_.GenerateLabel(test_label));
+        IrSequence sequence = {instruction_generator_.GenerateLabel(test_label)};
+        ConcatenateIrSequence(sequence, condition->GetPreparationSequence());
         sequence.push_back(instruction_generator_.GenerateIf(
-            condition->GetFinalValue(),
+            instruction_generator_.GenerateBinaryOperation(
+                InstructionGenerator::kBinaryOperatorNe,
+                condition->GetFinalValue(),
+                instruction_generator_.GenerateImm(0)),
             body_label));
         sequence.push_back(instruction_generator_.GenerateGoto(exit_label));
         sequence.push_back(instruction_generator_.GenerateLabel(body_label));
@@ -928,7 +937,10 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
             auto exit_label = GetNextLabelName();
 
             preparation_sequence.push_back(instruction_generator_.GenerateIf(
-                expression->GetFinalValue(),
+                instruction_generator_.GenerateBinaryOperation(
+                    InstructionGenerator::kBinaryOperatorNe,
+                    expression->GetFinalValue(),
+                    instruction_generator_.GenerateImm(0)),
                 true_label));
 
             preparation_sequence.push_back(instruction_generator_.GenerateAssign(
@@ -1228,7 +1240,10 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
             auto exit_label = GetNextLabelName();
 
             preparation_sequence.push_back(instruction_generator_.GenerateIf(
-                l_exp->GetFinalValue(),
+                instruction_generator_.GenerateBinaryOperation(
+                    InstructionGenerator::kBinaryOperatorNe,
+                    l_exp->GetFinalValue(),
+                    instruction_generator_.GenerateImm(0)),
                 next_test_label));
 
             preparation_sequence.push_back(instruction_generator_.GenerateLabel(false_label));
@@ -1242,7 +1257,10 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
             preparation_sequence.push_back(instruction_generator_.GenerateLabel(next_test_label));
 
             preparation_sequence.push_back(instruction_generator_.GenerateIf(
-                r_exp->GetFinalValue(),
+                instruction_generator_.GenerateBinaryOperation(
+                    InstructionGenerator::kBinaryOperatorNe,
+                    r_exp->GetFinalValue(),
+                    instruction_generator_.GenerateImm(0)),
                 true_label));
 
             preparation_sequence.push_back(instruction_generator_.GenerateGoto(false_label));
@@ -1267,11 +1285,17 @@ ExpValueSharedPtr IrGenerator::DoExp(const KTreeNode *node,
             auto exit_label = GetNextLabelName();
 
             preparation_sequence.push_back(instruction_generator_.GenerateIf(
-                l_exp->GetFinalValue(),
+                instruction_generator_.GenerateBinaryOperation(
+                    InstructionGenerator::kBinaryOperatorNe,
+                    l_exp->GetFinalValue(),
+                    instruction_generator_.GenerateImm(0)),
                 true_label));
 
             preparation_sequence.push_back(instruction_generator_.GenerateIf(
-                r_exp->GetFinalValue(),
+                instruction_generator_.GenerateBinaryOperation(
+                    InstructionGenerator::kBinaryOperatorNe,
+                    r_exp->GetFinalValue(),
+                    instruction_generator_.GenerateImm(0)),
                 true_label));
 
             preparation_sequence.push_back(instruction_generator_.GenerateAssign(
