@@ -410,6 +410,13 @@ void SemanticAnalyser::DoExtDef(const KTreeNode *node)
         // all parallel return values must match the declared return type
         if (specifier)
         {
+            if (return_types.size() == 0)
+            {
+                PrintError(kErrorReturnTypeMismatch,
+                           GetKTreeNodeLineNumber(node->l_child),
+                           "Should return '" + GetVariableSymbolTypeName(specifier) + '\'');
+            }
+
             for (auto &return_type : return_types)
             {
                 if (!return_type)

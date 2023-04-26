@@ -59,7 +59,9 @@
         "streambuf": "cpp",
         "cinttypes": "cpp",
         "typeinfo": "cpp",
-        "forward_list": "cpp"
+        "forward_list": "cpp",
+        "*.cmm": "c"
     },
-    "cmake.sourceDirectory": "${workspaceFolder}/Lab1"
+    "cmake.sourceDirectory": "${workspaceFolder}/Lab1",
+    "liveServer.settings.port": 5501
 }
