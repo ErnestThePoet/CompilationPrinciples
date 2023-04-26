@@ -35,6 +35,7 @@ public:
                            const std::string goto_label_name) const;
     std::string GenerateReturn(const std::string &value) const;
     std::string GenerateDec(const std::string &variable, const size_t size) const;
+    std::string GenerateGlobalDec(const std::string &variable, const size_t size) const;
     std::string GenerateArg(const std::string &value) const;
     std::string GenerateCall(const std::string &function_name) const;
     std::string GenerateParam(const std::string &variable) const;

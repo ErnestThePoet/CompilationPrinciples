@@ -75,6 +75,11 @@ std::string InstructionGenerator::GenerateDec(const std::string &variable, const
     return "DEC " + variable + ' ' + std::to_string(size);
 }
 
+std::string InstructionGenerator::GenerateGlobalDec(const std::string &variable, const size_t size) const
+{
+    return "GLOBAL_DEC " + variable + ' ' + std::to_string(size);
+}
+
 std::string InstructionGenerator::GenerateArg(const std::string &value) const
 {
     return "ARG " + value;
