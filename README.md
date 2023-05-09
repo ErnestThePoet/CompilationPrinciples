@@ -18,6 +18,7 @@
 使用C++实现的中间代码生成器
 - 完成了附加要求3.1：支持结构体类型变量、结构体类型参数
 - 完成了附加要求3.2：支持一维数组参数、高维数组变量
+- 支持全局变量的声明和使用，针对本人开发的[Web版IR虚拟机](https://ernestthepoet.github.io/ir-virtual-machine/)
 ### 原理简述
 中间代码生成器同样在实验一中生成的语法树上独立运行，中间代码生成器类`IrGenerator`使用与实验二中`SemanticAnalyser`类相同的语法树分析基架。各方法的具体说明请见`Lab3/bits/ir_generator.cpp`中的注释。`InstructionGenerator`这个工具类用来生成一行指定类型的IR代码。  
 
