@@ -1,8 +1,10 @@
+哈尔滨工业大学2023春编译系统（编译原理）实验 HIT Compilation Principle Labs(Spring 2023)
+
 # Lab1
 使用GNU Flex和GNU Bison编写的词法+语法分析器
 - 完成了附加要求1.1：识别八进制数、十六进制数
 - 完成了附加要求1.2：识别指数形式的浮点数
-- 完成了附加要求1.3：识别单行注释、块注释（其中块注释的实现请参阅[Stack Overflow回答](https://stackoverflow.com/questions/2130097/difficulty-getting-c-style-comments-in-flex-lex)和[Flex Manual](http://westes.github.io/flex/manual/Start-Conditions.html)
+- 完成了附加要求1.3：识别单行注释、块注释（其中块注释的实现请参阅[Stack Overflow回答](https://stackoverflow.com/questions/2130097/difficulty-getting-c-style-comments-in-flex-lex)和[Flex Manual](http://westes.github.io/flex/manual/Start-Conditions.html)）
 
 # Lab2
 完全使用C++类继承体系和智能指针实现的语义分析器
@@ -19,6 +21,8 @@
 - 完成了附加要求3.1：支持结构体类型变量、结构体类型参数
 - 完成了附加要求3.2：支持一维数组参数、高维数组变量
 - 支持全局变量的声明和使用，针对本人开发的[Web版IR虚拟机](https://ernestthepoet.github.io/ir-virtual-machine/)
+### 友情贴士
+推荐使用本人开发的[Web版IR虚拟机](https://ernestthepoet.github.io/ir-virtual-machine/)（[仓库地址](https://github.com/ErnestThePoet/ir-virtual-machine)）进行中间代码的调试和实验三的验收
 ### 原理简述
 中间代码生成器同样在实验一中生成的语法树上独立运行，中间代码生成器类`IrGenerator`使用与实验二中`SemanticAnalyser`类相同的语法树分析基架。各方法的具体说明请见`Lab3/bits/ir_generator.cpp`中的注释。`InstructionGenerator`这个工具类用来生成一行指定类型的IR代码。  
 
