@@ -1,4 +1,4 @@
-哈尔滨工业大学2023春编译系统（编译原理）实验 HIT Compilation Principle Labs(Spring 2023)
+哈尔滨工业大学2023春编译原理（编译系统）实验 HIT Compilation Principle Labs(Spring 2023)
 
 # Lab1
 使用GNU Flex和GNU Bison编写的词法+语法分析器
